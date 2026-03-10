@@ -9,22 +9,34 @@ import {
 } from "powerbi-visuals-utils-formattingmodel";
 
 // -------------------------
-// Chart options (orientation)
+// Chart options (orientation, sort)
 // mapped to "chartOptions" object in capabilities.json
 // -------------------------
 export class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
     public name: string = "chartOptions";
     public displayName: string = "Chart options";
 
-    public orientation = new formattingSettings.NumUpDown({
+    // Orientation as dropdown with labels
+    public orientation = new formattingSettings.ItemDropdown({
         name: "orientation",
         displayName: "Orientation",
-        value: 0 // 0 = vertical, 1 = horizontal
+        items: [
+            { value: "vertical", displayName: "Vertical" },
+            { value: "horizontal", displayName: "Horizontal" }
+        ],
+        value: { value: "vertical", displayName: "Vertical" } // default selection
     });
 
-    // you can later add quartile, whisker, etc. here if you want them
+    // Sort categories by median
+    public sortByMedian = new formattingSettings.ToggleSwitch({
+        name: "sortByMedian",
+        displayName: "Sort categories by median",
+        value: false
+    });
+
     public slices: formattingSettings.Slice[] = [
-        this.orientation
+        this.orientation,
+        this.sortByMedian
     ];
 }
 
@@ -76,41 +88,9 @@ export class XAxisCardSettings extends formattingSettings.SimpleCard {
         value: true
     });
 
-    public fontColor = new formattingSettings.ColorPicker({
-        name: "fontColor",
-        displayName: "Font color",
-        value: { value: "#666666" }
-    });
-
-    public fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text size",
-        value: 11
-    });
-
-    public fontFamily = new formattingSettings.TextInput({
-        name: "fontFamily",
-        displayName: "Font family",
-        value: "Segoe UI",
-        placeholder: "Segoe UI"
-    });
-
-    public slices: formattingSettings.Slice[] = [
-        this.show,
-        this.fontColor,
-        this.fontSize,
-        this.fontFamily
-    ];
-}
-
-// Y axis (mapped to "yAxis")
-export class YAxisCardSettings extends formattingSettings.SimpleCard {
-    public name: string = "yAxis";
-    public displayName: string = "Y axis";
-
-    public show = new formattingSettings.ToggleSwitch({
-        name: "show",
-        displayName: "Show",
+    public showGrid = new formattingSettings.ToggleSwitch({
+        name: "showGrid",
+        displayName: "Show gridlines",
         value: true
     });
 
@@ -135,6 +115,52 @@ export class YAxisCardSettings extends formattingSettings.SimpleCard {
 
     public slices: formattingSettings.Slice[] = [
         this.show,
+        this.showGrid,
+        this.fontColor,
+        this.fontSize,
+        this.fontFamily
+    ];
+}
+
+// Y axis (mapped to "yAxis")
+export class YAxisCardSettings extends formattingSettings.SimpleCard {
+    public name: string = "yAxis";
+    public displayName: string = "Y axis";
+
+    public show = new formattingSettings.ToggleSwitch({
+        name: "show",
+        displayName: "Show",
+        value: true
+    });
+
+    public showGrid = new formattingSettings.ToggleSwitch({
+        name: "showGrid",
+        displayName: "Show gridlines",
+        value: true
+    });
+
+    public fontColor = new formattingSettings.ColorPicker({
+        name: "fontColor",
+        displayName: "Font color",
+        value: { value: "#666666" }
+    });
+
+    public fontSize = new formattingSettings.NumUpDown({
+        name: "fontSize",
+        displayName: "Text size",
+        value: 11
+    });
+
+    public fontFamily = new formattingSettings.TextInput({
+        name: "fontFamily",
+        displayName: "Font family",
+        value: "Segoe UI",
+        placeholder: "Segoe UI"
+    });
+
+    public slices: formattingSettings.Slice[] = [
+        this.show,
+        this.showGrid,
         this.fontColor,
         this.fontSize,
         this.fontFamily

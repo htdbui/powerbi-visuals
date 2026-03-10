@@ -57,7 +57,12 @@
       "properties": {
         "orientation": {
           "displayName": "Orientation",
-          "type": { "numeric": true }
+          "type": {
+            "enumeration": [
+              { "value": "vertical" },
+              { "value": "horizontal" }
+            ]
+          }
         },
         "quartile": {
           "displayName": "Quartile method",
@@ -82,6 +87,10 @@
         "margin": {
           "displayName": "Margin",
           "type": { "numeric": true }
+        },
+        "sortByMedian": {
+          "displayName": "Sort categories by median",
+          "type": { "bool": true }
         }
       }
     },
@@ -90,6 +99,10 @@
       "properties": {
         "show": {
           "displayName": "Show",
+          "type": { "bool": true }
+        },
+        "showGrid": {
+          "displayName": "Show gridlines",
           "type": { "bool": true }
         },
         "fontColor": {
@@ -155,6 +168,10 @@
       "properties": {
         "show": {
           "displayName": "Show",
+          "type": { "bool": true }
+        },
+        "showGrid": {
+          "displayName": "Show gridlines",
           "type": { "bool": true }
         },
         "start": {

@@ -191,7 +191,8 @@ export class Visual implements IVisual {
     }
 
     private render(viewModel: BoxplotViewModel, viewport: IViewport): void {
-        const data = viewModel.dataPoints;
+        // copy so we can sort
+        let data = viewModel.dataPoints.slice();
         this.mainGroup.selectAll("*").remove();
 
         if (data.length === 0) {
@@ -216,17 +217,37 @@ export class Visual implements IVisual {
             : dp.fill.value.value;
         const medianColor = dp.medianColor.value.value;
 
-        // Orientation: 0 = vertical, 1 = horizontal
-        let orientation = 0;
+        // Orientation: "vertical" or "horizontal"
+        let orientation: string = "vertical";
+
         if (chartOptionsSettings &&
             chartOptionsSettings.orientation &&
-            chartOptionsSettings.orientation.value !== undefined) {
-            orientation = chartOptionsSettings.orientation.value;
+            chartOptionsSettings.orientation.value) {
+
+            // orientation.value is an IEnumMember: { value: string; displayName: string; }
+            const enumMember = chartOptionsSettings.orientation.value as any;
+            orientation = enumMember.value as string;
+
         } else if ((this.settings as any).chartOptions &&
-                   (this.settings as any).chartOptions.orientation !== undefined) {
-            orientation = (this.settings as any).chartOptions.orientation;
+                (this.settings as any).chartOptions.orientation !== undefined) {
+
+            // Legacy numeric: 0 = vertical, 1 = horizontal
+            const legacyOrientation = (this.settings as any).chartOptions.orientation;
+            orientation = legacyOrientation === 1 ? "horizontal" : "vertical";
         }
-        const isHorizontal = orientation === 1;
+
+        const isHorizontal = orientation === "horizontal";
+
+        // Sort by median if enabled
+        let sortByMedian = false;
+        if (chartOptionsSettings &&
+            chartOptionsSettings.sortByMedian &&
+            chartOptionsSettings.sortByMedian.value !== undefined) {
+            sortByMedian = chartOptionsSettings.sortByMedian.value;
+        }
+        if (sortByMedian) {
+            data.sort((a, b) => a.median - b.median); // ascending
+        }
 
         // Base margins
         const baseMargin = { top: 20, right: 20, bottom: 40, left: 50 };
@@ -236,7 +257,6 @@ export class Visual implements IVisual {
         if (isHorizontal) {
             const fontSize = yAxisSettings.fontSize.value || 11;
             const maxLabelLen = d3.max(data, d => (d.category ? d.category.length : 0)) || 0;
-            // rough estimate: 0.6 * fontSize per character + some padding
             const approxLabelWidth = maxLabelLen * fontSize * 0.6;
             margin.left = Math.max(baseMargin.left, approxLabelWidth + 10);
         }
@@ -246,6 +266,9 @@ export class Visual implements IVisual {
 
         const g = this.mainGroup
             .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Number formatting for tooltips (1 decimal place)
+        const formatVal = (v: number) => v.toFixed(1);
 
         if (!isHorizontal) {
             // ----------------------
@@ -263,6 +286,29 @@ export class Visual implements IVisual {
 
             const xAxis = d3.axisBottom(xScale);
             const yAxis = d3.axisLeft(yScale).ticks(5);
+
+            // Grid axes
+            const yGrid = d3.axisLeft(yScale)
+                .tickSize(-width)
+                .tickFormat(() => "");
+
+            const xGrid = d3.axisBottom(xScale)
+                .tickSize(-height)
+                .tickFormat(() => "");
+
+            // Add gridlines if enabled
+            if (yAxisSettings.showGrid.value) {
+                g.append("g")
+                    .attr("class", "grid grid-y")
+                    .call(yGrid);
+            }
+
+            if (xAxisSettings.showGrid.value) {
+                g.append("g")
+                    .attr("class", "grid grid-x")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(xGrid);
+            }
 
             if (xAxisSettings.show.value) {
                 g.append("g")
@@ -364,18 +410,18 @@ export class Visual implements IVisual {
                 });
             });
 
-            // Tooltips
+            // Tooltips with rounded values (1 decimal)
             this.tooltipServiceWrapper.addTooltip(
                 boxGroup,
-                (d: BoxplotDataPoint) => [{
-                    displayName: d.category,
-                    value: `min: ${d.min}
-Q1: ${d.q1}
-median: ${d.median}
-Q3: ${d.q3}
-max: ${d.max}`
-                }],
-                (d: BoxplotDataPoint) => d.identity
+                (tooltipEvent: BoxplotDataPoint) => [
+                    { displayName: "Category", value: tooltipEvent.category },
+                    { displayName: "min",     value: formatVal(tooltipEvent.min) },
+                    { displayName: "Q1",      value: formatVal(tooltipEvent.q1) },
+                    { displayName: "median",  value: formatVal(tooltipEvent.median) },
+                    { displayName: "Q3",      value: formatVal(tooltipEvent.q3) },
+                    { displayName: "max",     value: formatVal(tooltipEvent.max) }
+                ],
+                (tooltipEvent: BoxplotDataPoint) => tooltipEvent.identity
             );
         } else {
             // ----------------------
@@ -393,6 +439,29 @@ max: ${d.max}`
 
             const xAxis = d3.axisBottom(xScale).ticks(5);
             const yAxis = d3.axisLeft(yScale);
+
+            // Grid axes
+            const xGrid = d3.axisBottom(xScale)
+                .tickSize(-height)
+                .tickFormat(() => "");
+
+            const yGrid = d3.axisLeft(yScale)
+                .tickSize(-width)
+                .tickFormat(() => "");
+
+            // Add gridlines if enabled
+            if (yAxisSettings.showGrid.value) {
+                g.append("g")
+                    .attr("class", "grid grid-y")
+                    .call(yGrid);
+            }
+
+            if (xAxisSettings.showGrid.value) {
+                g.append("g")
+                    .attr("class", "grid grid-x")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(xGrid);
+            }
 
             if (xAxisSettings.show.value) {
                 g.append("g")
@@ -497,18 +566,18 @@ max: ${d.max}`
                 });
             });
 
-            // Tooltips
+            // Tooltips with rounded values (1 decimal)
             this.tooltipServiceWrapper.addTooltip(
                 boxGroup,
-                (d: BoxplotDataPoint) => [{
-                    displayName: d.category,
-                    value: `min: ${d.min}
-Q1: ${d.q1}
-median: ${d.median}
-Q3: ${d.q3}
-max: ${d.max}`
-                }],
-                (d: BoxplotDataPoint) => d.identity
+                (tooltipEvent: BoxplotDataPoint) => [
+                    { displayName: "Category", value: tooltipEvent.category },
+                    { displayName: "min",     value: formatVal(tooltipEvent.min) },
+                    { displayName: "Q1",      value: formatVal(tooltipEvent.q1) },
+                    { displayName: "median",  value: formatVal(tooltipEvent.median) },
+                    { displayName: "Q3",      value: formatVal(tooltipEvent.q3) },
+                    { displayName: "max",     value: formatVal(tooltipEvent.max) }
+                ],
+                (tooltipEvent: BoxplotDataPoint) => tooltipEvent.identity
             );
         }
     }

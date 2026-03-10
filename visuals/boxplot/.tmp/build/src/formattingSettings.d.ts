@@ -2,7 +2,8 @@ import { formattingSettings, FormattingSettingsService } from "powerbi-visuals-u
 export declare class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
-    orientation: formattingSettings.NumUpDown;
+    orientation: formattingSettings.ItemDropdown;
+    sortByMedian: formattingSettings.ToggleSwitch;
     slices: formattingSettings.Slice[];
 }
 export declare class DataPointCardSettings extends formattingSettings.SimpleCard {
@@ -18,6 +19,7 @@ export declare class XAxisCardSettings extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
     show: formattingSettings.ToggleSwitch;
+    showGrid: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
     fontFamily: formattingSettings.TextInput;
@@ -27,6 +29,7 @@ export declare class YAxisCardSettings extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
     show: formattingSettings.ToggleSwitch;
+    showGrid: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
     fontFamily: formattingSettings.TextInput;
