@@ -6,6 +6,11 @@
       "displayName": "Category"
     },
     {
+      "name": "Sampling",
+      "kind": "Grouping",
+      "displayName": "Sampling"
+    },
+    {
       "name": "Values",
       "kind": "Measure",
       "displayName": "Values"
@@ -20,8 +25,11 @@
     {
       "categorical": {
         "categories": {
-          "for": { "in": "Category" },
-          "dataReductionAlgorithm": { "top": {} }
+          "select": [
+            { "for": { "in": "Category" } },
+            { "for": { "in": "Sampling" } }
+          ],
+          "dataReductionAlgorithm": { "sample": {} }
         },
         "values": {
           "select": [

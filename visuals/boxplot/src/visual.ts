@@ -23,7 +23,6 @@ import IViewport = powerbi.IViewport;
 import DataView = powerbi.DataView;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
-import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
@@ -120,33 +119,43 @@ export class Visual implements IVisual {
         this.mainGroup.selectAll("*").remove();
     }
 
+    /**
+     * Transform the categorical DataView into a BoxplotViewModel.
+     * Assumes:
+     *  - categories[0] = Category
+     *  - categories[1] = Sampling (optional)
+     *  - values[0] = Values measure (used for boxplot)
+     *  - values[1] = Tooltips measure (optional, not used in stats)
+     */
     private transform(dataView: DataView): BoxplotViewModel {
         const categorical = dataView.categorical;
+
+        // First category column is the main Category used for box grouping
         const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
+
+        // We don't need to explicitly use Sampling column in calculations;
+        // its presence in capabilities makes Power BI send multiple rows
+        // per Category, which gives us multiple Values per Category.
         const valueColumns: DataViewValueColumns = categorical.values!;
-        const valueGroups: DataViewValueColumnGroup[] = valueColumns.grouped();
+        const valuesMeasure = valueColumns[0]; // "Values" role
 
         const categories = categoryColumn.values.map(c => String(c));
 
-        // group values by category
+        // group values by Category (using each row as one observation)
         const grouped: { [category: string]: number[] } = {};
 
-        categories.forEach((cat, idx) => {
-            const categoryName = String(cat);
-            const valuesForCategory: number[] = [];
+        for (let idx = 0; idx < categories.length; idx++) {
+            const categoryName = categories[idx];
 
-            // iterate through all value groups and all measures
-            valueGroups.forEach(group => {
-                group.values.forEach(vcol => {
-                    const value = vcol.values[idx] as number;
-                    if (value != null && !isNaN(value)) {
-                        valuesForCategory.push(value);
-                    }
-                });
-            });
+            if (!grouped[categoryName]) {
+                grouped[categoryName] = [];
+            }
 
-            grouped[categoryName] = valuesForCategory;
-        });
+            const value = valuesMeasure.values[idx] as number;
+            if (value != null && !isNaN(value)) {
+                grouped[categoryName].push(value);
+            }
+        }
 
         const dataPoints: BoxplotDataPoint[] = [];
 
@@ -333,7 +342,7 @@ export class Visual implements IVisual {
             });
         });
 
-        // Tooltips
+        // Tooltips: show summary stats per box
         this.tooltipServiceWrapper.addTooltip(
             boxGroup,
             (d: BoxplotDataPoint) => [{
