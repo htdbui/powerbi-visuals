@@ -6,4 +6,11 @@ p em {
   background: yellow;
   padding: 5px;
 }
+.boxplotBox.selected .box-rect {
+  stroke: #000000;
+  stroke-width: 3px;
+}
+.boxplotBox .box-rect {
+  cursor: pointer;
+}
 

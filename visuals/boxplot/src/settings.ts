@@ -1,83 +1,107 @@
-/*
- *  Power BI Visualizations
- *
- *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
- *  MIT License
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the ""Software""), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
+import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
+import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
-"use strict";
+export class Settings extends DataViewObjectsParser {
+    public static getDefault(): Settings {
+        return new Settings();
+    }
 
-import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
+    public general = {
+        telemetry: false as boolean
+    };
 
-import FormattingSettingsCard = formattingSettings.SimpleCard;
-import FormattingSettingsSlice = formattingSettings.Slice;
-import FormattingSettingsModel = formattingSettings.Model;
+    public chartOptions = {
+        orientation: 0 as number,
+        quartile: 0 as number,
+        whisker: 0 as number,
+        lower: undefined as number | undefined,
+        higher: undefined as number | undefined,
+        outliers: true as boolean,
+        margin: 0 as number
+    };
 
-/**
- * Data Point Formatting Card
- */
-class DataPointCardSettings extends FormattingSettingsCard {
-    defaultColor = new formattingSettings.ColorPicker({
-        name: "defaultColor",
-        displayName: "Default color",
-        value: { value: "" }
-    });
+    public xAxis = {
+        show: true as boolean,
+        fontColor: "#666666",
+        fontSize: 11 as number,
+        fontFamily: "Segoe UI",
+        labelDisplayUnits: 0 as number,
+        labelPrecision: undefined as number | undefined,
+        orientation: 0 as number,
+        showTitle: false as boolean,
+        title: "",
+        titleFontColor: "#666666",
+        titleFontSize: 11 as number,
+        titleFontFamily: "Segoe UI",
+        titleAlignment: 0 as number
+    };
 
-    showAllDataPoints = new formattingSettings.ToggleSwitch({
-        name: "showAllDataPoints",
-        displayName: "Show all",
-        value: true
-    });
+    public yAxis = {
+        show: true as boolean,
+        start: undefined as number | undefined,
+        end: undefined as number | undefined,
+        fontColor: "#666666",
+        fontSize: 11 as number,
+        fontFamily: "Segoe UI",
+        labelDisplayUnits: 0 as number,
+        labelPrecision: undefined as number | undefined,
+        showTitle: false as boolean,
+        title: "",
+        titleFontColor: "#666666",
+        titleFontSize: 11 as number,
+        titleFontFamily: "Segoe UI",
+        titleAlignment: 0 as number
+    };
 
-    fill = new formattingSettings.ColorPicker({
-        name: "fill",
-        displayName: "Fill",
-        value: { value: "" }
-    });
+    public dataPoint = {
+        meanColor: "#000000",
+        medianColor: "#000000",
+        oneColor: false as boolean,
+        oneFill: "#4c78a8",
+        fill: "#4c78a8"
+    };
 
-    fillRule = new formattingSettings.ColorPicker({
-        name: "fillRule",
-        displayName: "Color saturation",
-        value: { value: "" }
-    });
+    public labels = {
+        show: false as boolean,
+        fontColor: "#666666",
+        fontSize: 9 as number,
+        fontFamily: "Segoe UI",
+        labelDisplayUnits: 0 as number,
+        labelPrecision: undefined as number | undefined
+    };
 
-    fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text Size",
-        value: 12
-    });
+    public shapes = {
+        showMean: false as boolean,
+        showMedian: true as boolean,
+        highlight: true as boolean,
+        fixedCategory: false as boolean
+    };
 
-    name: string = "dataPoint";
-    displayName: string = "Data colors";
-    slices: Array<FormattingSettingsSlice> = [this.defaultColor, this.showAllDataPoints, this.fill, this.fillRule, this.fontSize];
-}
+    public gridLines = {
+        show: false as boolean,
+        majorGridSize: 1 as number,
+        majorGridColor: "#e6e6e6",
+        minorGrid: false as boolean,
+        minorGridSize: 1 as number,
+        minorGridColor: "#f0f0f0"
+    };
 
-/**
-* visual settings model class
-*
-*/
-export class VisualFormattingSettingsModel extends FormattingSettingsModel {
-    // Create formatting settings model formatting cards
-    dataPointCard = new DataPointCardSettings();
-
-    cards = [this.dataPointCard];
+    public y1AxisReferenceLine = {
+        show: false as boolean,
+        displayName: "",
+        value: undefined as number | undefined,
+        lineColor: "#000000",
+        transparency: 50 as number,
+        style: 0 as number,
+        position: 1 as number,
+        showLabel: false as boolean,
+        labelColor: "#000000",
+        labelType: 0 as number,
+        labelFontSize: 9 as number,
+        labelFontFamily: "Segoe UI",
+        labelDisplayUnits: 0 as number,
+        labelPrecision: undefined as number | undefined,
+        hPosition: 0 as number,
+        vPosition: 0 as number
+    };
 }

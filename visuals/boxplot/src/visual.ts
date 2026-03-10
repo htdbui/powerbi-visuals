@@ -1,29 +1,3 @@
-/*
-*  Power BI Visual CLI
-*
-*  Copyright (c) Microsoft Corporation
-*  All rights reserved.
-*  MIT License
-*
-*  Permission is hereby granted, free of charge, to any person obtaining a copy
-*  of this software and associated documentation files (the ""Software""), to deal
-*  in the Software without restriction, including without limitation the rights
-*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-*  copies of the Software, and to permit persons to whom the Software is
-*  furnished to do so, subject to the following conditions:
-*
-*  The above copyright notice and this permission notice shall be included in
-*  all copies or substantial portions of the Software.
-*
-*  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-*  THE SOFTWARE.
-*/
-
 "use strict";
 
 import "core-js";
@@ -37,17 +11,27 @@ import {
     ITooltipServiceWrapper
 } from "powerbi-visuals-utils-tooltiputils";
 
+import {
+    VisualFormattingSettingsModel,
+    formattingSettingsService
+} from "./formattingSettings";
+
+import { Settings } from "./settings";
+
 import ISelectionId = powerbi.visuals.ISelectionId;
 import IViewport = powerbi.IViewport;
 import DataView = powerbi.DataView;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
-import DataViewValueColumn = powerbi.DataViewValueColumn;
+import DataViewValueColumns = powerbi.DataViewValueColumns;
+import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
+import FormattingModel = powerbi.visuals.FormattingModel;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 type Selection<T> = d3.Selection<d3.BaseType, T, SVGElement | null, any>;
 
@@ -71,6 +55,10 @@ export class Visual implements IVisual {
     private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
+    private selectionManager: ISelectionManager;
+
+    private formattingSettings: VisualFormattingSettingsModel;
+    private settings: Settings;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -87,19 +75,36 @@ export class Visual implements IVisual {
             this.host.tooltipService,
             options.element
         );
+
+        this.selectionManager = this.host.createSelectionManager();
+
+        this.formattingSettings = new VisualFormattingSettingsModel();
+        this.settings = Settings.getDefault();
     }
 
     public update(options: VisualUpdateOptions): void {
         const dataView = options.dataViews && options.dataViews[0];
+
         if (!dataView ||
             !dataView.categorical ||
             !dataView.categorical.categories ||
+            dataView.categorical.categories.length === 0 ||
             !dataView.categorical.values ||
             dataView.categorical.values.length === 0
         ) {
             this.clear();
             return;
         }
+
+        // Legacy settings (for backward-compat enumeration)
+        this.settings = Settings.parse<Settings>(dataView);
+
+        // Modern formatting settings (formatting model)
+        this.formattingSettings =
+            formattingSettingsService.populateFormattingSettingsModel(
+                VisualFormattingSettingsModel,
+                dataView
+            );
 
         const viewModel = this.transform(dataView);
         const viewport: IViewport = options.viewport;
@@ -118,21 +123,29 @@ export class Visual implements IVisual {
     private transform(dataView: DataView): BoxplotViewModel {
         const categorical = dataView.categorical;
         const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
-        const valueGroups = categorical.values!.grouped();
+        const valueColumns: DataViewValueColumns = categorical.values!;
+        const valueGroups: DataViewValueColumnGroup[] = valueColumns.grouped();
 
         const categories = categoryColumn.values.map(c => String(c));
 
         // group values by category
         const grouped: { [category: string]: number[] } = {};
+
         categories.forEach((cat, idx) => {
             const categoryName = String(cat);
-            grouped[categoryName] = [];
+            const valuesForCategory: number[] = [];
+
+            // iterate through all value groups and all measures
             valueGroups.forEach(group => {
-                const value = group.values[idx] as unknown as number;
-                if (value != null && !isNaN(value)) {
-                    grouped[categoryName].push(value);
-                }
+                group.values.forEach(vcol => {
+                    const value = vcol.values[idx] as number;
+                    if (value != null && !isNaN(value)) {
+                        valuesForCategory.push(value);
+                    }
+                });
             });
+
+            grouped[categoryName] = valuesForCategory;
         });
 
         const dataPoints: BoxplotDataPoint[] = [];
@@ -149,9 +162,11 @@ export class Visual implements IVisual {
             const median = quantile(values, 0.5);
             const q3 = quantile(values, 0.75);
 
+            const categoryIndex = categories.indexOf(category);
+
             const identity = this.host
                 .createSelectionIdBuilder()
-                .withCategory(categoryColumn, categories.indexOf(category))
+                .withCategory(categoryColumn, categoryIndex)
                 .createSelectionId();
 
             dataPoints.push({
@@ -201,25 +216,42 @@ export class Visual implements IVisual {
             .range([0, width])
             .padding(0.4);
 
-        const color = "#4c78a8";
+        // colors from formatting model
+        const dp = this.formattingSettings.dataPointCard;
+        const color = dp.oneColor.value
+            ? dp.oneFill.value.value
+            : dp.fill.value.value;
+        const medianColor = dp.medianColor.value.value;
+
+        const xAxisSettings = this.formattingSettings.xAxisCard;
+        const yAxisSettings = this.formattingSettings.yAxisCard;
+        const shapesSettings = this.formattingSettings.shapesCard;
 
         // Axes
         const xAxis = d3.axisBottom(xScale);
         const yAxis = d3.axisLeft(yScale).ticks(5);
 
-        g.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(xAxis)
-            .selectAll("text")
-            .style("font-size", "10px");
+        if (xAxisSettings.show.value) {
+            g.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(xAxis)
+                .selectAll("text")
+                .style("font-size", `${xAxisSettings.fontSize.value}px`)
+                .style("fill", xAxisSettings.fontColor.value.value)
+                .style("font-family", xAxisSettings.fontFamily.value);
+        }
 
-        g.append("g")
-            .call(yAxis)
-            .selectAll("text")
-            .style("font-size", "10px");
+        if (yAxisSettings.show.value) {
+            g.append("g")
+                .call(yAxis)
+                .selectAll("text")
+                .style("font-size", `${yAxisSettings.fontSize.value}px`)
+                .style("fill", yAxisSettings.fontColor.value.value)
+                .style("font-family", yAxisSettings.fontFamily.value);
+        }
 
         // Draw boxes
-        const boxGroup = g.selectAll(".boxplotBox")
+        const boxGroup = g.selectAll<SVGGElement, BoxplotDataPoint>(".boxplotBox")
             .data(data)
             .enter()
             .append("g")
@@ -250,14 +282,16 @@ export class Visual implements IVisual {
             .attr("fill", color);
 
         // Median line
-        boxGroup.append("line")
-            .attr("class", "median-line")
-            .attr("x1", -boxWidth / 2)
-            .attr("x2", boxWidth / 2)
-            .attr("y1", d => yScale(d.median))
-            .attr("y2", d => yScale(d.median))
-            .attr("stroke", "#08306b")
-            .attr("stroke-width", 2);
+        if (shapesSettings.showMedian.value) {
+            boxGroup.append("line")
+                .attr("class", "median-line")
+                .attr("x1", -boxWidth / 2)
+                .attr("x2", boxWidth / 2)
+                .attr("y1", d => yScale(d.median))
+                .attr("y2", d => yScale(d.median))
+                .attr("stroke", medianColor)
+                .attr("stroke-width", 2);
+        }
 
         // Whisker caps (horizontal lines at min & max)
         boxGroup.append("line")
@@ -278,6 +312,27 @@ export class Visual implements IVisual {
             .attr("stroke", color)
             .attr("stroke-width", 1.5);
 
+        // Selection behavior
+        boxGroup.on("click", (event: MouseEvent, d: BoxplotDataPoint) => {
+            const isMultiSelect = event.ctrlKey || event.metaKey;
+            this.selectionManager
+                .select(d.identity, isMultiSelect)
+                .then((selectionIds: ISelectionId[] | undefined) => {
+                    boxGroup.classed("selected", dp =>
+                        !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
+                    );
+                });
+
+            event.stopPropagation();
+        });
+
+        // Clear selection when clicking background
+        this.svg.on("click", () => {
+            this.selectionManager.clear().then(() => {
+                boxGroup.classed("selected", false);
+            });
+        });
+
         // Tooltips
         this.tooltipServiceWrapper.addTooltip(
             boxGroup,
@@ -293,8 +348,19 @@ max: ${d.max}`
         );
     }
 
-    public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-        return {} as VisualObjectInstanceEnumeration;
+    public enumerateObjectInstances(
+        options: EnumerateVisualObjectInstancesOptions
+    ): VisualObjectInstanceEnumeration {
+        // Use legacy Settings for older format pane enumeration
+        return Settings.enumerateObjectInstances(
+            this.settings || Settings.getDefault(),
+            options
+        );
+    }
+
+    public getFormattingModel(): FormattingModel {
+        // Modern format pane
+        return formattingSettingsService.buildFormattingModel(this.formattingSettings);
     }
 }
 
