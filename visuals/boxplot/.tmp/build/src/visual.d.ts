@@ -4,6 +4,8 @@ import powerbi from "powerbi-visuals-api";
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
+import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
+import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 export declare class Visual implements IVisual {
     private host;
     private svg;
@@ -14,4 +16,5 @@ export declare class Visual implements IVisual {
     private clear;
     private transform;
     private render;
+    enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;
 }

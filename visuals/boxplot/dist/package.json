@@ -5,10 +5,10 @@
 			{
 				"resourceId": "rId0",
 				"sourceType": 5,
-				"file": "resources/boxplot.pbiviz.json"
+				"file": "resources/boxplotgit.pbiviz.json"
 			}
 		],
-		"visual": {"name":"boxplot","displayName":"boxplot","guid":"boxplot","visualClassName":"Visual","version":"1.0.0.0","description":"Custom boxplot visual built by db","supportUrl":"https://github.com/htdbui/powerbi-visuals/issues","gitHubUrl":"https://github.com/htdbui/powerbi-visuals"},
+		"visual": {"name":"boxplot","displayName":"boxplot","guid":"boxplotgit","visualClassName":"Visual","version":"1.0.0.0","description":"Custom boxplot visual built by db","supportUrl":"https://github.com/htdbui/powerbi-visuals/issues","gitHubUrl":"https://github.com/htdbui/powerbi-visuals"},
 		"metadata": {
 			"pbivizjson": {
 				"resourceId": "rId0"
