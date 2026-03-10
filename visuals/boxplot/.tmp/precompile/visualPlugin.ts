@@ -5,8 +5,8 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var boxplot5789B6ADE08948938C53E34A70C2BC7E: IVisualPlugin = {
-    name: 'boxplot5789B6ADE08948938C53E34A70C2BC7E',
+var boxplot1: IVisualPlugin = {
+    name: 'boxplot1',
     displayName: 'boxplot',
     class: 'Visual',
     apiVersion: '5.3.0',
@@ -27,6 +27,6 @@ var boxplot5789B6ADE08948938C53E34A70C2BC7E: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["boxplot5789B6ADE08948938C53E34A70C2BC7E"] = boxplot5789B6ADE08948938C53E34A70C2BC7E;
+    powerbi.visuals.plugins["boxplot1"] = boxplot1;
 }
-export default boxplot5789B6ADE08948938C53E34A70C2BC7E;
+export default boxplot1;

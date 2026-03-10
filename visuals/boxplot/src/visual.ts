@@ -26,25 +26,26 @@
 
 "use strict";
 
-import "core-js/stable";
+import "core-js";
 import "./../style/visual.less";
 
 import powerbi from "powerbi-visuals-api";
 import * as d3 from "d3";
+
+import {
+    createTooltipServiceWrapper,
+    ITooltipServiceWrapper
+} from "powerbi-visuals-utils-tooltiputils";
 
 import ISelectionId = powerbi.visuals.ISelectionId;
 import IViewport = powerbi.IViewport;
 import DataView = powerbi.DataView;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumn = powerbi.DataViewValueColumn;
-import DataViewObjects = powerbi.DataViewObjects;
-import DataViewObject = powerbi.DataViewObject;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import TooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
-import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
 
 type Selection<T> = d3.Selection<d3.BaseType, T, SVGElement | null, any>;
 
@@ -67,7 +68,7 @@ export class Visual implements IVisual {
     private host: IVisualHost;
     private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
-    private tooltipServiceWrapper: TooltipServiceWrapper;
+    private tooltipServiceWrapper: ITooltipServiceWrapper;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
