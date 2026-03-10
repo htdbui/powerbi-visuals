@@ -1,29 +1,3 @@
-/*
-*  Power BI Visual CLI
-*
-*  Copyright (c) Microsoft Corporation
-*  All rights reserved.
-*  MIT License
-*
-*  Permission is hereby granted, free of charge, to any person obtaining a copy
-*  of this software and associated documentation files (the ""Software""), to deal
-*  in the Software without restriction, including without limitation the rights
-*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-*  copies of the Software, and to permit persons to whom the Software is
-*  furnished to do so, subject to the following conditions:
-*
-*  The above copyright notice and this permission notice shall be included in
-*  all copies or substantial portions of the Software.
-*
-*  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-*  THE SOFTWARE.
-*/
-
 "use strict";
 
 import "core-js";
@@ -116,24 +90,21 @@ export class Visual implements IVisual {
     private transform(dataView: DataView): BoxplotViewModel {
         const categorical = dataView.categorical;
         const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
-        const valueColumn: DataViewValueColumn = categorical.values![0];
+        const valueGroups = categorical.values!.grouped();
 
         const categories = categoryColumn.values.map(c => String(c));
 
         // group values by category
         const grouped: { [category: string]: number[] } = {};
-        categoryColumn.values.forEach((cat, idx) => {
+        categories.forEach((cat, idx) => {
             const categoryName = String(cat);
-            const value = <number>valueColumn.values[idx];
-
-            if (value == null || isNaN(value)) {
-                return;
-            }
-
-            if (!grouped[categoryName]) {
-                grouped[categoryName] = [];
-            }
-            grouped[categoryName].push(value);
+            grouped[categoryName] = [];
+            valueGroups.forEach(group => {
+                const value = <number>group.values[idx];
+                if (value != null && !isNaN(value)) {
+                    grouped[categoryName].push(value);
+                }
+            });
         });
 
         const dataPoints: BoxplotDataPoint[] = [];
@@ -248,7 +219,7 @@ export class Visual implements IVisual {
             .attr("height", d => Math.max(yScale(d.q1) - yScale(d.q3), 1))
             .attr("stroke", color)
             .attr("stroke-width", 1.5)
-            .attr("fill", "#9ecae1");
+            .attr("fill", color);
 
         // Median line
         boxGroup.append("line")
