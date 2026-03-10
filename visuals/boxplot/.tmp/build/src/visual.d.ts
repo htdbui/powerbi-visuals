@@ -23,8 +23,8 @@ export declare class Visual implements IVisual {
      * Assumes:
      *  - categories[0] = Category
      *  - categories[1] = Sampling (optional)
-     *  - values[0] = Values measure (used for boxplot)
-     *  - values[1] = Tooltips measure (optional, not used in stats)
+     *  - values[0]     = Values measure (used for boxplot)
+     *  - values[1]     = Tooltips measure (optional)
      */
     private transform;
     private render;

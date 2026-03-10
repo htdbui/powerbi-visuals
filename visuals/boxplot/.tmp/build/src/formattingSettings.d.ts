@@ -1,4 +1,10 @@
 import { formattingSettings, FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+export declare class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
+    name: string;
+    displayName: string;
+    orientation: formattingSettings.NumUpDown;
+    slices: formattingSettings.Slice[];
+}
 export declare class DataPointCardSettings extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
@@ -36,6 +42,7 @@ export declare class ShapesCardSettings extends formattingSettings.SimpleCard {
     slices: formattingSettings.Slice[];
 }
 export declare class VisualFormattingSettingsModel extends formattingSettings.Model {
+    chartOptionsCard: ChartOptionsCardSettings;
     dataPointCard: DataPointCardSettings;
     xAxisCard: XAxisCardSettings;
     yAxisCard: YAxisCardSettings;

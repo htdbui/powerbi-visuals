@@ -8,6 +8,26 @@ import {
     FormattingSettingsService
 } from "powerbi-visuals-utils-formattingmodel";
 
+// -------------------------
+// Chart options (orientation)
+// mapped to "chartOptions" object in capabilities.json
+// -------------------------
+export class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
+    public name: string = "chartOptions";
+    public displayName: string = "Chart options";
+
+    public orientation = new formattingSettings.NumUpDown({
+        name: "orientation",
+        displayName: "Orientation",
+        value: 0 // 0 = vertical, 1 = horizontal
+    });
+
+    // you can later add quartile, whisker, etc. here if you want them
+    public slices: formattingSettings.Slice[] = [
+        this.orientation
+    ];
+}
+
 // Data colors (mapped to "dataPoint" object in capabilities.json)
 export class DataPointCardSettings extends formattingSettings.SimpleCard {
     public name: string = "dataPoint";
@@ -160,12 +180,14 @@ export class ShapesCardSettings extends formattingSettings.SimpleCard {
 
 // Root formatting model that Power BI will query
 export class VisualFormattingSettingsModel extends formattingSettings.Model {
+    public chartOptionsCard = new ChartOptionsCardSettings();
     public dataPointCard = new DataPointCardSettings();
     public xAxisCard = new XAxisCardSettings();
     public yAxisCard = new YAxisCardSettings();
     public shapesCard = new ShapesCardSettings();
 
     public cards: formattingSettings.SimpleCard[] = [
+        this.chartOptionsCard,
         this.dataPointCard,
         this.xAxisCard,
         this.yAxisCard,

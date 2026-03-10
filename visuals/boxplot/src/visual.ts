@@ -124,24 +124,19 @@ export class Visual implements IVisual {
      * Assumes:
      *  - categories[0] = Category
      *  - categories[1] = Sampling (optional)
-     *  - values[0] = Values measure (used for boxplot)
-     *  - values[1] = Tooltips measure (optional, not used in stats)
+     *  - values[0]     = Values measure (used for boxplot)
+     *  - values[1]     = Tooltips measure (optional)
      */
     private transform(dataView: DataView): BoxplotViewModel {
         const categorical = dataView.categorical;
 
-        // First category column is the main Category used for box grouping
         const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
-
-        // We don't need to explicitly use Sampling column in calculations;
-        // its presence in capabilities makes Power BI send multiple rows
-        // per Category, which gives us multiple Values per Category.
         const valueColumns: DataViewValueColumns = categorical.values!;
         const valuesMeasure = valueColumns[0]; // "Values" role
 
         const categories = categoryColumn.values.map(c => String(c));
 
-        // group values by Category (using each row as one observation)
+        // group values by Category (each row = one observation)
         const grouped: { [category: string]: number[] } = {};
 
         for (let idx = 0; idx < categories.length; idx++) {
@@ -203,158 +198,319 @@ export class Visual implements IVisual {
             return;
         }
 
-        const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+        const allValues = data.reduce(
+            (acc, d) => acc.concat([d.min, d.max]),
+            [] as number[]
+        );
+
+        // Formatting cards
+        const dp = this.formattingSettings.dataPointCard;
+        const xAxisSettings = this.formattingSettings.xAxisCard;
+        const yAxisSettings = this.formattingSettings.yAxisCard;
+        const shapesSettings = this.formattingSettings.shapesCard;
+        const chartOptionsSettings = (this.formattingSettings as any).chartOptionsCard;
+
+        // Colors
+        const color = dp.oneColor.value
+            ? dp.oneFill.value.value
+            : dp.fill.value.value;
+        const medianColor = dp.medianColor.value.value;
+
+        // Orientation: 0 = vertical, 1 = horizontal
+        let orientation = 0;
+        if (chartOptionsSettings &&
+            chartOptionsSettings.orientation &&
+            chartOptionsSettings.orientation.value !== undefined) {
+            orientation = chartOptionsSettings.orientation.value;
+        } else if ((this.settings as any).chartOptions &&
+                   (this.settings as any).chartOptions.orientation !== undefined) {
+            orientation = (this.settings as any).chartOptions.orientation;
+        }
+        const isHorizontal = orientation === 1;
+
+        // Base margins
+        const baseMargin = { top: 20, right: 20, bottom: 40, left: 50 };
+        const margin = { ...baseMargin };
+
+        // Dynamically increase left margin for horizontal orientation
+        if (isHorizontal) {
+            const fontSize = yAxisSettings.fontSize.value || 11;
+            const maxLabelLen = d3.max(data, d => (d.category ? d.category.length : 0)) || 0;
+            // rough estimate: 0.6 * fontSize per character + some padding
+            const approxLabelWidth = maxLabelLen * fontSize * 0.6;
+            margin.left = Math.max(baseMargin.left, approxLabelWidth + 10);
+        }
+
         const width = Math.max(viewport.width - margin.left - margin.right, 10);
         const height = Math.max(viewport.height - margin.top - margin.bottom, 10);
 
         const g = this.mainGroup
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        const allValues = data.reduce(
-            (acc, d) => acc.concat([d.min, d.max]),
-            [] as number[]
-        );
+        if (!isHorizontal) {
+            // ----------------------
+            // Vertical orientation
+            // ----------------------
+            const yScale = d3.scaleLinear()
+                .domain([d3.min(allValues)!, d3.max(allValues)!])
+                .nice()
+                .range([height, 0]);
 
-        const yScale = d3.scaleLinear()
-            .domain([d3.min(allValues)!, d3.max(allValues)!])
-            .nice()
-            .range([height, 0]);
+            const xScale = d3.scaleBand()
+                .domain(data.map(d => d.category))
+                .range([0, width])
+                .padding(0.4);
 
-        const xScale = d3.scaleBand()
-            .domain(data.map(d => d.category))
-            .range([0, width])
-            .padding(0.4);
+            const xAxis = d3.axisBottom(xScale);
+            const yAxis = d3.axisLeft(yScale).ticks(5);
 
-        // colors from formatting model
-        const dp = this.formattingSettings.dataPointCard;
-        const color = dp.oneColor.value
-            ? dp.oneFill.value.value
-            : dp.fill.value.value;
-        const medianColor = dp.medianColor.value.value;
+            if (xAxisSettings.show.value) {
+                g.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(xAxis)
+                    .selectAll("text")
+                    .style("font-size", `${xAxisSettings.fontSize.value}px`)
+                    .style("fill", xAxisSettings.fontColor.value.value)
+                    .style("font-family", xAxisSettings.fontFamily.value);
+            }
 
-        const xAxisSettings = this.formattingSettings.xAxisCard;
-        const yAxisSettings = this.formattingSettings.yAxisCard;
-        const shapesSettings = this.formattingSettings.shapesCard;
+            if (yAxisSettings.show.value) {
+                g.append("g")
+                    .call(yAxis)
+                    .selectAll("text")
+                    .style("font-size", `${yAxisSettings.fontSize.value}px`)
+                    .style("fill", yAxisSettings.fontColor.value.value)
+                    .style("font-family", yAxisSettings.fontFamily.value);
+            }
 
-        // Axes
-        const xAxis = d3.axisBottom(xScale);
-        const yAxis = d3.axisLeft(yScale).ticks(5);
+            const boxGroup = g.selectAll<SVGGElement, BoxplotDataPoint>(".boxplotBox")
+                .data(data)
+                .enter()
+                .append("g")
+                .classed("boxplotBox", true)
+                .attr("transform", d => `translate(${xScale(d.category)! + xScale.bandwidth() / 2},0)`);
 
-        if (xAxisSettings.show.value) {
-            g.append("g")
-                .attr("transform", `translate(0,${height})`)
-                .call(xAxis)
-                .selectAll("text")
-                .style("font-size", `${xAxisSettings.fontSize.value}px`)
-                .style("fill", xAxisSettings.fontColor.value.value)
-                .style("font-family", xAxisSettings.fontFamily.value);
-        }
+            const boxWidth = Math.max(xScale.bandwidth() * 0.6, 10);
 
-        if (yAxisSettings.show.value) {
-            g.append("g")
-                .call(yAxis)
-                .selectAll("text")
-                .style("font-size", `${yAxisSettings.fontSize.value}px`)
-                .style("fill", yAxisSettings.fontColor.value.value)
-                .style("font-family", yAxisSettings.fontFamily.value);
-        }
-
-        // Draw boxes
-        const boxGroup = g.selectAll<SVGGElement, BoxplotDataPoint>(".boxplotBox")
-            .data(data)
-            .enter()
-            .append("g")
-            .classed("boxplotBox", true)
-            .attr("transform", d => `translate(${xScale(d.category)! + xScale.bandwidth() / 2},0)`);
-
-        const boxWidth = Math.max(xScale.bandwidth() * 0.6, 10);
-
-        // Vertical line (whisker from min to max)
-        boxGroup.append("line")
-            .attr("class", "whisker-line")
-            .attr("x1", 0)
-            .attr("x2", 0)
-            .attr("y1", d => yScale(d.min))
-            .attr("y2", d => yScale(d.max))
-            .attr("stroke", color)
-            .attr("stroke-width", 1.5);
-
-        // Box from Q1 to Q3
-        boxGroup.append("rect")
-            .attr("class", "box-rect")
-            .attr("x", -boxWidth / 2)
-            .attr("width", boxWidth)
-            .attr("y", d => yScale(d.q3))
-            .attr("height", d => Math.max(yScale(d.q1) - yScale(d.q3), 1))
-            .attr("stroke", color)
-            .attr("stroke-width", 1.5)
-            .attr("fill", color);
-
-        // Median line
-        if (shapesSettings.showMedian.value) {
+            // Whisker line (min to max)
             boxGroup.append("line")
-                .attr("class", "median-line")
-                .attr("x1", -boxWidth / 2)
-                .attr("x2", boxWidth / 2)
-                .attr("y1", d => yScale(d.median))
-                .attr("y2", d => yScale(d.median))
-                .attr("stroke", medianColor)
-                .attr("stroke-width", 2);
-        }
+                .attr("class", "whisker-line")
+                .attr("x1", 0)
+                .attr("x2", 0)
+                .attr("y1", d => yScale(d.min))
+                .attr("y2", d => yScale(d.max))
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
 
-        // Whisker caps (horizontal lines at min & max)
-        boxGroup.append("line")
-            .attr("class", "whisker-cap-min")
-            .attr("x1", -boxWidth / 4)
-            .attr("x2", boxWidth / 4)
-            .attr("y1", d => yScale(d.min))
-            .attr("y2", d => yScale(d.min))
-            .attr("stroke", color)
-            .attr("stroke-width", 1.5);
+            // Box from Q1 to Q3
+            boxGroup.append("rect")
+                .attr("class", "box-rect")
+                .attr("x", -boxWidth / 2)
+                .attr("width", boxWidth)
+                .attr("y", d => yScale(d.q3))
+                .attr("height", d => Math.max(yScale(d.q1) - yScale(d.q3), 1))
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5)
+                .attr("fill", color);
 
-        boxGroup.append("line")
-            .attr("class", "whisker-cap-max")
-            .attr("x1", -boxWidth / 4)
-            .attr("x2", boxWidth / 4)
-            .attr("y1", d => yScale(d.max))
-            .attr("y2", d => yScale(d.max))
-            .attr("stroke", color)
-            .attr("stroke-width", 1.5);
+            // Median line
+            if (shapesSettings.showMedian.value) {
+                boxGroup.append("line")
+                    .attr("class", "median-line")
+                    .attr("x1", -boxWidth / 2)
+                    .attr("x2", boxWidth / 2)
+                    .attr("y1", d => yScale(d.median))
+                    .attr("y2", d => yScale(d.median))
+                    .attr("stroke", medianColor)
+                    .attr("stroke-width", 2);
+            }
 
-        // Selection behavior
-        boxGroup.on("click", (event: MouseEvent, d: BoxplotDataPoint) => {
-            const isMultiSelect = event.ctrlKey || event.metaKey;
-            this.selectionManager
-                .select(d.identity, isMultiSelect)
-                .then((selectionIds: ISelectionId[] | undefined) => {
-                    boxGroup.classed("selected", dp =>
-                        !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
-                    );
-                });
+            // Whisker caps
+            boxGroup.append("line")
+                .attr("class", "whisker-cap-min")
+                .attr("x1", -boxWidth / 4)
+                .attr("x2", boxWidth / 4)
+                .attr("y1", d => yScale(d.min))
+                .attr("y2", d => yScale(d.min))
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
 
-            event.stopPropagation();
-        });
+            boxGroup.append("line")
+                .attr("class", "whisker-cap-max")
+                .attr("x1", -boxWidth / 4)
+                .attr("x2", boxWidth / 4)
+                .attr("y1", d => yScale(d.max))
+                .attr("y2", d => yScale(d.max))
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
 
-        // Clear selection when clicking background
-        this.svg.on("click", () => {
-            this.selectionManager.clear().then(() => {
-                boxGroup.classed("selected", false);
+            // Selection
+            boxGroup.on("click", (event: MouseEvent, d: BoxplotDataPoint) => {
+                const isMultiSelect = event.ctrlKey || event.metaKey;
+                this.selectionManager
+                    .select(d.identity, isMultiSelect)
+                    .then((selectionIds: ISelectionId[] | undefined) => {
+                        boxGroup.classed("selected", dp =>
+                            !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
+                        );
+                    });
+
+                event.stopPropagation();
             });
-        });
 
-        // Tooltips: show summary stats per box
-        this.tooltipServiceWrapper.addTooltip(
-            boxGroup,
-            (d: BoxplotDataPoint) => [{
-                displayName: d.category,
-                value: `min: ${d.min}
+            this.svg.on("click", () => {
+                this.selectionManager.clear().then(() => {
+                    boxGroup.classed("selected", false);
+                });
+            });
+
+            // Tooltips
+            this.tooltipServiceWrapper.addTooltip(
+                boxGroup,
+                (d: BoxplotDataPoint) => [{
+                    displayName: d.category,
+                    value: `min: ${d.min}
 Q1: ${d.q1}
 median: ${d.median}
 Q3: ${d.q3}
 max: ${d.max}`
-            }],
-            (d: BoxplotDataPoint) => d.identity
-        );
+                }],
+                (d: BoxplotDataPoint) => d.identity
+            );
+        } else {
+            // ----------------------
+            // Horizontal orientation
+            // ----------------------
+            const xScale = d3.scaleLinear()
+                .domain([d3.min(allValues)!, d3.max(allValues)!])
+                .nice()
+                .range([0, width]);
+
+            const yScale = d3.scaleBand()
+                .domain(data.map(d => d.category))
+                .range([height, 0]) // keep baseline at bottom
+                .padding(0.4);
+
+            const xAxis = d3.axisBottom(xScale).ticks(5);
+            const yAxis = d3.axisLeft(yScale);
+
+            if (xAxisSettings.show.value) {
+                g.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(xAxis)
+                    .selectAll("text")
+                    .style("font-size", `${xAxisSettings.fontSize.value}px`)
+                    .style("fill", xAxisSettings.fontColor.value.value)
+                    .style("font-family", xAxisSettings.fontFamily.value);
+            }
+
+            if (yAxisSettings.show.value) {
+                g.append("g")
+                    .call(yAxis)
+                    .selectAll("text")
+                    .style("font-size", `${yAxisSettings.fontSize.value}px`)
+                    .style("fill", yAxisSettings.fontColor.value.value)
+                    .style("font-family", yAxisSettings.fontFamily.value);
+            }
+
+            const boxGroup = g.selectAll<SVGGElement, BoxplotDataPoint>(".boxplotBox")
+                .data(data)
+                .enter()
+                .append("g")
+                .classed("boxplotBox", true)
+                .attr("transform", d => {
+                    const yCenter = yScale(d.category)! + yScale.bandwidth() / 2;
+                    return `translate(0,${yCenter})`;
+                });
+
+            const boxHeight = Math.max(yScale.bandwidth() * 0.6, 10);
+
+            // Whisker line (min to max) horizontally
+            boxGroup.append("line")
+                .attr("class", "whisker-line")
+                .attr("x1", d => xScale(d.min))
+                .attr("x2", d => xScale(d.max))
+                .attr("y1", 0)
+                .attr("y2", 0)
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
+
+            // Box from Q1 to Q3 horizontally
+            boxGroup.append("rect")
+                .attr("class", "box-rect")
+                .attr("x", d => xScale(d.q1))
+                .attr("width", d => Math.max(xScale(d.q3) - xScale(d.q1), 1))
+                .attr("y", -boxHeight / 2)
+                .attr("height", boxHeight)
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5)
+                .attr("fill", color);
+
+            // Median line (vertical)
+            if (shapesSettings.showMedian.value) {
+                boxGroup.append("line")
+                    .attr("class", "median-line")
+                    .attr("x1", d => xScale(d.median))
+                    .attr("x2", d => xScale(d.median))
+                    .attr("y1", -boxHeight / 2)
+                    .attr("y2", boxHeight / 2)
+                    .attr("stroke", medianColor)
+                    .attr("stroke-width", 2);
+            }
+
+            // Whisker caps (vertical lines at min & max)
+            boxGroup.append("line")
+                .attr("class", "whisker-cap-min")
+                .attr("x1", d => xScale(d.min))
+                .attr("x2", d => xScale(d.min))
+                .attr("y1", -boxHeight / 4)
+                .attr("y2", boxHeight / 4)
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
+
+            boxGroup.append("line")
+                .attr("class", "whisker-cap-max")
+                .attr("x1", d => xScale(d.max))
+                .attr("x2", d => xScale(d.max))
+                .attr("y1", -boxHeight / 4)
+                .attr("y2", boxHeight / 4)
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
+
+            // Selection
+            boxGroup.on("click", (event: MouseEvent, d: BoxplotDataPoint) => {
+                const isMultiSelect = event.ctrlKey || event.metaKey;
+                this.selectionManager
+                    .select(d.identity, isMultiSelect)
+                    .then((selectionIds: ISelectionId[] | undefined) => {
+                        boxGroup.classed("selected", dp =>
+                            !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
+                        );
+                    });
+
+                event.stopPropagation();
+            });
+
+            this.svg.on("click", () => {
+                this.selectionManager.clear().then(() => {
+                    boxGroup.classed("selected", false);
+                });
+            });
+
+            // Tooltips
+            this.tooltipServiceWrapper.addTooltip(
+                boxGroup,
+                (d: BoxplotDataPoint) => [{
+                    displayName: d.category,
+                    value: `min: ${d.min}
+Q1: ${d.q1}
+median: ${d.median}
+Q3: ${d.q3}
+max: ${d.max}`
+                }],
+                (d: BoxplotDataPoint) => d.identity
+            );
+        }
     }
 
     public enumerateObjectInstances(
