@@ -1,0 +1,17 @@
+{
+		"version": "1.0.0.0",
+		"author": {"name":"db","email":"tuanduy.alias@gmail.com"},
+		"resources": [
+			{
+				"resourceId": "rId0",
+				"sourceType": 5,
+				"file": "resources/boxplot5789B6ADE08948938C53E34A70C2BC7E.pbiviz.json"
+			}
+		],
+		"visual": {"name":"boxplot","displayName":"boxplot","guid":"boxplot5789B6ADE08948938C53E34A70C2BC7E","visualClassName":"Visual","version":"1.0.0.0","description":"Custom boxplot visual built by db","supportUrl":"https://github.com/htdbui/powerbi-visuals/issues","gitHubUrl":"https://github.com/htdbui/powerbi-visuals"},
+		"metadata": {
+			"pbivizjson": {
+				"resourceId": "rId0"
+			}
+		}
+	}
