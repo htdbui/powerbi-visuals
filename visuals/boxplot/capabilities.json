@@ -9,6 +9,11 @@
             "displayName": "Measure Data",
             "name": "measure",
             "kind": "Measure"
+        },
+        {
+            "displayName": "Sampling",
+            "name": "sampling",
+            "kind": "Grouping"
         }
     ],
     "objects": {
@@ -42,7 +47,7 @@
                         "fill": {}
                     }
                 },
-                 "fontSize": {
+                "fontSize": {
                     "type": {
                         "formatting": {
                             "fontSize": true
@@ -64,13 +69,16 @@
                     }
                 },
                 "values": {
-                    "select": [
-                        {
-                            "bind": {
-                                "to": "measure"
+                    "group": {
+                        "by": "sampling",
+                        "select": [
+                            {
+                                "bind": {
+                                    "to": "measure"
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         }
