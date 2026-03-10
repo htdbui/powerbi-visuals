@@ -5,8 +5,8 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var boxplot1: IVisualPlugin = {
-    name: 'boxplot1',
+var boxplot: IVisualPlugin = {
+    name: 'boxplot',
     displayName: 'boxplot',
     class: 'Visual',
     apiVersion: '5.3.0',
@@ -27,6 +27,6 @@ var boxplot1: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["boxplot1"] = boxplot1;
+    powerbi.visuals.plugins["boxplot"] = boxplot;
 }
-export default boxplot1;
+export default boxplot;
