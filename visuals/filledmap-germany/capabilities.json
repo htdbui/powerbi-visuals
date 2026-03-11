@@ -1,0 +1,108 @@
+{
+  "dataRoles": [
+    {
+      "name": "PostalCode",
+      "kind": "Grouping",
+      "displayName": "Postal Code",
+      "description": "German postal code (PLZ) field used to match GeoJSON features"
+    },
+    {
+      "name": "Value",
+      "kind": "Measure",
+      "displayName": "Value",
+      "description": "Numeric measure used to determine fill color (rules or saturation mode)"
+    },
+    {
+      "name": "Color",
+      "kind": "Measure",
+      "displayName": "Color (hex)",
+      "description": "Optional hex color string per postal code (e.g. #FF0000) used in fixedValue color mode"
+    },
+    {
+      "name": "Tooltips",
+      "kind": "Measure",
+      "displayName": "Tooltips",
+      "description": "Optional extra measure shown in the tooltip"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "categorical": {
+        "categories": {
+          "select": [
+            { "for": { "in": "PostalCode" } }
+          ],
+          "dataReductionAlgorithm": { "top": { "count": 30000 } }
+        },
+        "values": {
+          "select": [
+            { "for": { "in": "Value" } },
+            { "for": { "in": "Color" } },
+            { "for": { "in": "Tooltips" } }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "colorOptions": {
+      "displayName": "Color options",
+      "properties": {
+        "colorMode": {
+          "displayName": "Color mode",
+          "description": "How fill colors are determined: rules (linear scale), fixedValue (hex column), or saturation",
+          "type": {
+            "enumeration": [
+              { "value": "rules", "displayName": "Rules (min → max scale)" },
+              { "value": "fixedValue", "displayName": "Fixed value (hex column)" },
+              { "value": "saturation", "displayName": "Saturation" }
+            ]
+          }
+        },
+        "colorLow": {
+          "displayName": "Low value color",
+          "description": "Fill color assigned to the minimum value (rules / saturation modes)",
+          "type": {
+            "fill": { "solid": { "color": true } }
+          }
+        },
+        "colorHigh": {
+          "displayName": "High value color",
+          "description": "Fill color assigned to the maximum value (rules / saturation modes)",
+          "type": {
+            "fill": { "solid": { "color": true } }
+          }
+        },
+        "defaultColor": {
+          "displayName": "No-data color",
+          "description": "Fill color for postal codes with no matching data row",
+          "type": {
+            "fill": { "solid": { "color": true } }
+          }
+        }
+      }
+    },
+    "mapOptions": {
+      "displayName": "Map options",
+      "properties": {
+        "borderColor": {
+          "displayName": "Border color",
+          "type": {
+            "fill": { "solid": { "color": true } }
+          }
+        },
+        "borderWidth": {
+          "displayName": "Border width",
+          "type": { "numeric": true }
+        },
+        "backgroundColor": {
+          "displayName": "Background color",
+          "type": {
+            "fill": { "solid": { "color": true } }
+          }
+        }
+      }
+    }
+  },
+  "privileges": []
+}

@@ -1,0 +1,46 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "PLACEHOLDER — Replace this file with the real Germany postal code GeoJSON. Each feature must have a 'properties.plz' field containing the 5-digit postal code string. Example sources: https://github.com/yetzt/postleitzahlen or https://hub.arcgis.com/datasets/esri-de-content::postleitzahlen-5-stellig",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "plz": "10115", "name": "Berlin Mitte" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[13.38, 52.53], [13.40, 52.53], [13.40, 52.52], [13.38, 52.52], [13.38, 52.53]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "plz": "20095", "name": "Hamburg Altstadt" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[9.99, 53.55], [10.01, 53.55], [10.01, 53.54], [9.99, 53.54], [9.99, 53.55]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "plz": "80331", "name": "München Mitte" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[11.57, 48.14], [11.59, 48.14], [11.59, 48.13], [11.57, 48.13], [11.57, 48.14]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "plz": "50667", "name": "Köln Altstadt" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[6.95, 50.94], [6.97, 50.94], [6.97, 50.93], [6.95, 50.93], [6.95, 50.94]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "plz": "60311", "name": "Frankfurt Innenstadt" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[8.68, 50.11], [8.70, 50.11], [8.70, 50.10], [8.68, 50.10], [8.68, 50.11]]]
+      }
+    }
+  ]
+}
