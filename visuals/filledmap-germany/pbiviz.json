@@ -1,26 +1,32 @@
 {
   "visual": {
-    "name": "filledmapgermany",
+    "name": "filledmap-germany",
     "displayName": "Filled Map Germany",
-    "guid": "filledmapgermany9B8E2D4F1A3C5E7B",
+    "guid": "filledmap_germany",
     "visualClassName": "Visual",
     "version": "1.0.0.0",
-    "description": "SVG filled map of German postal codes with dynamic coloring (rules, fixed hex, saturation).",
+    "description": "Filled map of German postal codes",
     "supportUrl": "https://github.com/htdbui/powerbi-visuals/issues",
-    "gitHubUrl": "https://github.com/htdbui/powerbi-visuals"
+    "gitHubUrl": "https://github.com/htdbui/powerbi-visuals",
+    "entry": "./src/visual.ts"
   },
+
   "apiVersion": "5.3.0",
+
   "author": {
-    "name": "db",
-    "email": "tuanduy.alias@gmail.com"
+    "name": "Your Name",
+    "email": "you@example.com"
   },
+
   "assets": {
     "icon": "assets/icon.png"
   },
-  "externalJS": null,
+
   "style": "style/visual.less",
   "capabilities": "capabilities.json",
-  "dependencies": null,
+  "dependencies": "package.json",
   "stringResources": [],
-  "version": "1.0.0.0"
+  "output": "dist",
+  "externalJS": [],
+  "resources": []
 }

@@ -14,7 +14,7 @@
         ]
     },
     "files": [
-        "./src/typings.d.ts",
-        "./src/visual.ts"
+        "./src/visual.ts",
+        "src/typings.d.ts"
     ]
 }

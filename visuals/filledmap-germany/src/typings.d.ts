@@ -1,15 +1,19 @@
-// Webpack-provided require() for bundling JSON assets
+// src/typings.d.ts
+
+// Declare require so TS accepts it
 declare function require(path: string): any;
 
-// Type declaration for .geojson imports
-declare module "*.geojson" {
-    const value: {
-        type: "FeatureCollection";
-        features: {
-            type: "Feature";
-            properties: Record<string, unknown>;
-            geometry: unknown;
-        }[];
-    };
+// Optional: JSON module typing
+declare module "*.json" {
+    const value: any;
     export default value;
 }
+
+// Allow importing GeoJSON and other JSON-like assets
+declare module "*.geojson" {
+    const value: any;
+    export default value;
+}
+
+// Allow require(...) calls in TypeScript
+declare function require(path: string): any;

@@ -18,9 +18,8 @@ import {
 
 import { Settings } from "./settings";
 
-// GeoJSON bundled as a webpack asset — replace with the real file
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const germanyGeoJSON = require("./../assets/germany-postal-codes.geojson");
+// GeoJSON bundled as a webpack asset
+const germanyGeoJSON = require("./../assets/germany-postal-codes.json");
 
 import ISelectionId = powerbi.visuals.ISelectionId;
 import IViewport = powerbi.IViewport;
@@ -149,14 +148,25 @@ export class Visual implements IVisual {
      *   values[?]     = Color measure      (role "Color")
      *   values[?]     = Tooltips measure   (role "Tooltips")
      */
+
     private transform(dataView: DataView): MapViewModel {
         const categorical = dataView.categorical;
-        const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
+
+        if (!categorical.categories || categorical.categories.length === 0) {
+            return {
+                dataPoints: [],
+                dataMap: new Map<string, MapDataPoint>(),
+                minValue: 0,
+                maxValue: 1
+            };
+        }
+
+        const categoryColumn: DataViewCategoryColumn = categorical.categories[0];
         const valueColumns: DataViewValueColumns | undefined = categorical.values;
 
+        // Use PLZ exactly as provided, as string
         const postalCodes = categoryColumn.values.map(c => String(c ?? ""));
 
-        // Locate each measure column by its data role
         let valueColIdx = -1;
         let colorColIdx = -1;
         let tooltipColIdx = -1;
@@ -210,8 +220,6 @@ export class Visual implements IVisual {
 
             const dp: MapDataPoint = { postalCode, value, hexColor, tooltipValue, identity };
             dataPoints.push(dp);
-
-            // Last row wins for duplicate postal codes
             dataMap.set(postalCode, dp);
         }
 
