@@ -60,16 +60,17 @@ interface PlzFeature {
     geometry: { type: string; coordinates: unknown };
 }
 
-// ----- Color mode constants -----
-const COLOR_MODE_RULES = "rules";
-const COLOR_MODE_FIXED = "fixedValue";
-const COLOR_MODE_SATURATION = "saturation";
-
 // ----- Helper: extract PLZ from a GeoJSON feature's properties -----
+// IMPORTANT: your GeoJSON uses "postcode", so we prioritize that.
+// Also trim spaces to match Power BI text exactly.
 function getPlz(properties: Record<string, unknown>): string {
-    // Support the most common field names used in Germany postal code GeoJSON files
-    const val = properties["plz"] ?? properties["PLZ"] ?? properties["postcode"] ?? properties["zip"] ?? "";
-    return String(val);
+    const val =
+        properties["postcode"] ??
+        properties["plz"] ??
+        properties["PLZ"] ??
+        properties["zip"] ??
+        "";
+    return String(val ?? "").trim();
 }
 
 export class Visual implements IVisual {
@@ -120,7 +121,7 @@ export class Visual implements IVisual {
         // Legacy settings (backward-compatible enumeration)
         this.settings = Settings.parse<Settings>(dataView);
 
-        // Modern formatting model
+        // Modern formatting model (still loaded, but we don’t rely on it for debug colors)
         this.formattingSettings =
             formattingSettingsService.populateFormattingSettingsModel(
                 VisualFormattingSettingsModel,
@@ -164,8 +165,8 @@ export class Visual implements IVisual {
         const categoryColumn: DataViewCategoryColumn = categorical.categories[0];
         const valueColumns: DataViewValueColumns | undefined = categorical.values;
 
-        // Use PLZ exactly as provided, as string
-        const postalCodes = categoryColumn.values.map(c => String(c ?? ""));
+        // Normalize PLZ coming from Power BI (string + trim)
+        const postalCodes = categoryColumn.values.map(c => String(c ?? "").trim());
 
         let valueColIdx = -1;
         let colorColIdx = -1;
@@ -233,24 +234,18 @@ export class Visual implements IVisual {
     private render(viewModel: MapViewModel, viewport: IViewport): void {
         this.mapGroup.selectAll("*").remove();
 
-        const colorOpts = this.formattingSettings.colorOptionsCard;
-        const mapOpts = this.formattingSettings.mapOptionsCard;
-
-        // Read color mode from the enum dropdown value
-        const colorModeEnum = colorOpts.colorMode.value as { value: string };
-        const colorMode: string = colorModeEnum?.value ?? COLOR_MODE_RULES;
-
-        const colorLow = colorOpts.colorLow.value.value;
-        const colorHigh = colorOpts.colorHigh.value.value;
-        const defaultColor = colorOpts.defaultColor.value.value;
-        const borderColor = mapOpts.borderColor.value.value;
-        const borderWidth = mapOpts.borderWidth.value;
-        const backgroundColor = mapOpts.backgroundColor.value.value;
+        // DEBUG: ignore formatting pane for now, hard-code very visible colors
+        const defaultColor = "#FF00FF";     // bright magenta for "no data"
+        const colorLow = "#FFFFCC";         // pale yellow
+        const colorHigh = "#FF0000";        // red
+        const borderColor = "#000000";      // black border
+        const borderWidth = 0.5;
+        const backgroundColor = "#FFFFFF";  // white background
 
         // Apply background color to the SVG element
         this.svg.style("background-color", backgroundColor);
 
-        // Linear color interpolator for "rules" mode
+        // Linear color interpolator (always "rules" mode in this debug version)
         const colorScale = d3.scaleLinear<string>()
             .domain([viewModel.minValue, viewModel.maxValue])
             .range([colorLow, colorHigh])
@@ -262,24 +257,11 @@ export class Visual implements IVisual {
                 return defaultColor;
             }
 
-            if (colorMode === COLOR_MODE_FIXED) {
-                return dp.hexColor ?? defaultColor;
-            }
-
             if (dp.value == null || isNaN(dp.value)) {
                 return defaultColor;
             }
 
-            if (colorMode === COLOR_MODE_SATURATION) {
-                // Normalize value to [0, 1] and use it as the HSL saturation
-                const normalized = (dp.value - viewModel.minValue) /
-                    (viewModel.maxValue - viewModel.minValue);
-                const baseHsl = d3.hsl(colorHigh);
-                baseHsl.s = Math.max(0, Math.min(1, normalized));
-                return baseHsl.toString();
-            }
-
-            // Default: rules — linear interpolation between colorLow and colorHigh
+            // Always use rules: linear interpolation between colorLow and colorHigh
             return colorScale(dp.value);
         };
 
@@ -287,7 +269,7 @@ export class Visual implements IVisual {
         const projection = d3.geoMercator()
             .fitSize(
                 [Math.max(viewport.width, 1), Math.max(viewport.height, 1)],
-                germanyGeoJSON
+                germanyGeoJSON as any
             );
 
         const pathGenerator = d3.geoPath().projection(projection);
@@ -303,10 +285,18 @@ export class Visual implements IVisual {
             .attr("d", (d: PlzFeature) => pathGenerator(d as d3.GeoPermissibleObjects) ?? "")
             .attr("fill", (d: PlzFeature) => {
                 const plz = getPlz(d.properties);
-                return getFill(viewModel.dataMap.get(plz));
+                const dp = viewModel.dataMap.get(plz);
+                return getFill(dp);
+            })
+            .style("fill", (d: PlzFeature) => {
+                const plz = getPlz(d.properties);
+                const dp = viewModel.dataMap.get(plz);
+                return getFill(dp);
             })
             .attr("stroke", borderColor)
-            .attr("stroke-width", borderWidth);
+            .style("stroke", borderColor)
+            .attr("stroke-width", borderWidth)
+            .style("stroke-width", `${borderWidth}px`);
 
         // --- Click selection ---
         paths.on("click", (event: MouseEvent, d: PlzFeature) => {
@@ -336,7 +326,7 @@ export class Visual implements IVisual {
             });
         });
 
-        // --- Tooltips ---
+        // --- Tooltips (DEBUG mode) ---
         this.tooltipServiceWrapper.addTooltip(
             paths,
             (d: PlzFeature): VisualTooltipDataItem[] => {
@@ -344,19 +334,21 @@ export class Visual implements IVisual {
                 const dp = viewModel.dataMap.get(plz);
 
                 const items: VisualTooltipDataItem[] = [
-                    { displayName: "Postal Code", value: plz }
+                    { displayName: "DEBUG PLZ", value: `PLZ_FROM_GEOJSON=${plz}` }
                 ];
 
                 if (dp) {
                     if (dp.value != null) {
-                        items.push({ displayName: "Value", value: String(dp.value) });
+                        items.push({ displayName: "DEBUG Value", value: String(dp.value) });
                     }
                     if (dp.hexColor != null) {
-                        items.push({ displayName: "Color", value: dp.hexColor });
+                        items.push({ displayName: "DEBUG Color", value: dp.hexColor });
                     }
                     if (dp.tooltipValue != null) {
-                        items.push({ displayName: "Tooltip", value: dp.tooltipValue });
+                        items.push({ displayName: "DEBUG Tooltip", value: dp.tooltipValue });
                     }
+                } else {
+                    items.push({ displayName: "DEBUG Status", value: "NO MATCH IN dataMap" });
                 }
 
                 return items;

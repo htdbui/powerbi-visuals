@@ -1,7 +1,7 @@
 {
   "name": "visual",
   "description": "Filled map of German postal codes with dynamic coloring",
-  "version": "1.0.0.0",
+  "version": "1.0.0.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/htdbui/powerbi-visuals"
