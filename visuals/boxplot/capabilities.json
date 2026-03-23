@@ -29,9 +29,7 @@
             { "for": { "in": "Category" } },
             { "for": { "in": "Sampling" } }
           ],
-          "dataReductionAlgorithm": { 
-            "top": { "count": 1000000000000000 }
-        }
+          "dataReductionAlgorithm": { "top": { "count": 1000000000 } }
         },
         "values": {
           "select": [

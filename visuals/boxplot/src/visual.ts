@@ -212,9 +212,7 @@ export class Visual implements IVisual {
         const chartOptionsSettings = (this.formattingSettings as any).chartOptionsCard;
 
         // Colors
-        const color = dp.oneColor.value
-            ? dp.oneFill.value.value
-            : dp.fill.value.value;
+        const color = dp.fill.value.value;
         const medianColor = dp.medianColor.value.value;
 
         // Orientation: "vertical" or "horizontal"

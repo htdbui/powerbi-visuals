@@ -43,7 +43,7 @@ export class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
 // Data colors (mapped to "dataPoint" object in capabilities.json)
 export class DataPointCardSettings extends formattingSettings.SimpleCard {
     public name: string = "dataPoint";
-    public displayName: string = "Data colors";
+    public displayName: string = "Box colors";
 
     public oneColor = new formattingSettings.ToggleSwitch({
         name: "oneColor",
@@ -51,15 +51,9 @@ export class DataPointCardSettings extends formattingSettings.SimpleCard {
         value: false
     });
 
-    public oneFill = new formattingSettings.ColorPicker({
-        name: "oneFill",
-        displayName: "Box color",
-        value: { value: "#4c78a8" }
-    });
-
     public fill = new formattingSettings.ColorPicker({
         name: "fill",
-        displayName: "Series color",
+        displayName: "Box color",
         value: { value: "#4c78a8" }
     });
 
@@ -71,7 +65,6 @@ export class DataPointCardSettings extends formattingSettings.SimpleCard {
 
     public slices: formattingSettings.Slice[] = [
         this.oneColor,
-        this.oneFill,
         this.fill,
         this.medianColor
     ];

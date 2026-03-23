@@ -10,7 +10,6 @@ export declare class DataPointCardSettings extends formattingSettings.SimpleCard
     name: string;
     displayName: string;
     oneColor: formattingSettings.ToggleSwitch;
-    oneFill: formattingSettings.ColorPicker;
     fill: formattingSettings.ColorPicker;
     medianColor: formattingSettings.ColorPicker;
     slices: formattingSettings.Slice[];
