@@ -9,9 +9,9 @@ export declare class ChartOptionsCardSettings extends formattingSettings.SimpleC
 export declare class DataPointCardSettings extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
-    oneColor: formattingSettings.ToggleSwitch;
     fill: formattingSettings.ColorPicker;
     medianColor: formattingSettings.ColorPicker;
+    meanColor: formattingSettings.ColorPicker;
     slices: formattingSettings.Slice[];
 }
 export declare class XAxisCardSettings extends formattingSettings.SimpleCard {
@@ -19,6 +19,7 @@ export declare class XAxisCardSettings extends formattingSettings.SimpleCard {
     displayName: string;
     show: formattingSettings.ToggleSwitch;
     showGrid: formattingSettings.ToggleSwitch;
+    showTicks: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
     fontFamily: formattingSettings.TextInput;
@@ -29,6 +30,7 @@ export declare class YAxisCardSettings extends formattingSettings.SimpleCard {
     displayName: string;
     show: formattingSettings.ToggleSwitch;
     showGrid: formattingSettings.ToggleSwitch;
+    showTicks: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
     fontFamily: formattingSettings.TextInput;
@@ -39,8 +41,6 @@ export declare class ShapesCardSettings extends formattingSettings.SimpleCard {
     displayName: string;
     showMedian: formattingSettings.ToggleSwitch;
     showMean: formattingSettings.ToggleSwitch;
-    highlight: formattingSettings.ToggleSwitch;
-    fixedCategory: formattingSettings.ToggleSwitch;
     slices: formattingSettings.Slice[];
 }
 export declare class VisualFormattingSettingsModel extends formattingSettings.Model {

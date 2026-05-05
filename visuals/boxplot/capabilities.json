@@ -59,8 +59,8 @@
           "displayName": "Orientation",
           "type": {
             "enumeration": [
-              { "value": "vertical" },
-              { "value": "horizontal" }
+              { "value": "vertical",   "displayName": "Vertical" },
+              { "value": "horizontal", "displayName": "Horizontal" }
             ]
           }
         },
@@ -105,6 +105,14 @@
           "displayName": "Show gridlines",
           "type": { "bool": true }
         },
+        "showTicks": {
+          "displayName": "Show ticks",
+          "type": { "bool": true }
+        },
+        "showArrow": {
+          "displayName": "Show arrow",
+          "type": { "bool": true }
+        },        
         "fontColor": {
           "displayName": "Font color",
           "type": {
@@ -174,6 +182,14 @@
           "displayName": "Show gridlines",
           "type": { "bool": true }
         },
+        "showTicks": {
+          "displayName": "Show ticks",
+          "type": { "bool": true }
+        },
+        "showArrow": {
+          "displayName": "Show arrow",
+          "type": { "bool": true }
+        },        
         "start": {
           "displayName": "Start",
           "type": { "numeric": true }

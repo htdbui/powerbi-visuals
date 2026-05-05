@@ -4,7 +4,7 @@
     "displayName": "boxplot",
     "guid": "boxplot",
     "visualClassName": "Visual",
-    "version": "1.0.1.3",
+    "version": "1.0.0.5",
     "description": "Custom boxplot visual built by db",
     "supportUrl": "https://github.com/htdbui/powerbi-visuals/issues",
     "gitHubUrl": "https://github.com/htdbui/powerbi-visuals"

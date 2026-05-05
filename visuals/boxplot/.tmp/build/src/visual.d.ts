@@ -13,19 +13,12 @@ export declare class Visual implements IVisual {
     private mainGroup;
     private tooltipServiceWrapper;
     private selectionManager;
+    private events;
     private formattingSettings;
     private settings;
     constructor(options: VisualConstructorOptions);
     update(options: VisualUpdateOptions): void;
     private clear;
-    /**
-     * Transform the categorical DataView into a BoxplotViewModel.
-     * Assumes:
-     *  - categories[0] = Category
-     *  - categories[1] = Sampling (optional)
-     *  - values[0]     = Values measure (used for boxplot)
-     *  - values[1]     = Tooltips measure (optional)
-     */
     private transform;
     private render;
     enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration;

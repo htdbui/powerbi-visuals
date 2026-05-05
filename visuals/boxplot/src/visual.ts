@@ -31,6 +31,7 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import FormattingModel = powerbi.visuals.FormattingModel;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 type Selection<T> = d3.Selection<d3.BaseType, T, SVGElement | null, any>;
 
@@ -39,6 +40,7 @@ interface BoxplotDataPoint {
     min: number;
     q1: number;
     median: number;
+    mean: number;
     q3: number;
     max: number;
     identity: ISelectionId;
@@ -55,12 +57,14 @@ export class Visual implements IVisual {
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private selectionManager: ISelectionManager;
+    private events: IVisualEventService;
 
     private formattingSettings: VisualFormattingSettingsModel;
     private settings: Settings;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
+        this.events = options.host.eventService;
 
         this.svg = d3
             .select(options.element)
@@ -82,61 +86,60 @@ export class Visual implements IVisual {
     }
 
     public update(options: VisualUpdateOptions): void {
-        const dataView = options.dataViews && options.dataViews[0];
+        this.events.renderingStarted(options);
 
-        if (!dataView ||
-            !dataView.categorical ||
-            !dataView.categorical.categories ||
-            dataView.categorical.categories.length === 0 ||
-            !dataView.categorical.values ||
-            dataView.categorical.values.length === 0
-        ) {
-            this.clear();
-            return;
+        try {
+            const dataView = options.dataViews && options.dataViews[0];
+
+            if (!dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                dataView.categorical.categories.length === 0 ||
+                !dataView.categorical.values ||
+                dataView.categorical.values.length === 0
+            ) {
+                this.clear();
+                this.events.renderingFinished(options);
+                return;
+            }
+
+            this.settings = Settings.parse<Settings>(dataView);
+
+            this.formattingSettings =
+                formattingSettingsService.populateFormattingSettingsModel(
+                    VisualFormattingSettingsModel,
+                    dataView
+                );
+
+            const viewModel = this.transform(dataView);
+            const viewport: IViewport = options.viewport;
+
+            this.svg
+                .attr("width", viewport.width)
+                .attr("height", viewport.height);
+
+            this.render(viewModel, viewport);
+
+            this.events.renderingFinished(options);
+
+        } catch (error) {
+            this.events.renderingFailed(options, error);
         }
-
-        // Legacy settings (for backward-compat enumeration)
-        this.settings = Settings.parse<Settings>(dataView);
-
-        // Modern formatting settings (formatting model)
-        this.formattingSettings =
-            formattingSettingsService.populateFormattingSettingsModel(
-                VisualFormattingSettingsModel,
-                dataView
-            );
-
-        const viewModel = this.transform(dataView);
-        const viewport: IViewport = options.viewport;
-
-        this.svg
-            .attr("width", viewport.width)
-            .attr("height", viewport.height);
-
-        this.render(viewModel, viewport);
     }
 
     private clear(): void {
         this.mainGroup.selectAll("*").remove();
     }
 
-    /**
-     * Transform the categorical DataView into a BoxplotViewModel.
-     * Assumes:
-     *  - categories[0] = Category
-     *  - categories[1] = Sampling (optional)
-     *  - values[0]     = Values measure (used for boxplot)
-     *  - values[1]     = Tooltips measure (optional)
-     */
     private transform(dataView: DataView): BoxplotViewModel {
         const categorical = dataView.categorical;
 
         const categoryColumn: DataViewCategoryColumn = categorical.categories![0];
         const valueColumns: DataViewValueColumns = categorical.values!;
-        const valuesMeasure = valueColumns[0]; // "Values" role
+        const valuesMeasure = valueColumns[0];
 
         const categories = categoryColumn.values.map(c => String(c));
 
-        // group values by Category (each row = one observation)
         const grouped: { [category: string]: number[] } = {};
 
         for (let idx = 0; idx < categories.length; idx++) {
@@ -160,11 +163,12 @@ export class Visual implements IVisual {
                 continue;
             }
 
-            const min = values[0];
-            const max = values[values.length - 1];
-            const q1 = quantile(values, 0.25);
+            const min    = values[0];
+            const max    = values[values.length - 1];
+            const q1     = quantile(values, 0.25);
             const median = quantile(values, 0.5);
-            const q3 = quantile(values, 0.75);
+            const q3     = quantile(values, 0.75);
+            const mean   = values.reduce((a, b) => a + b, 0) / values.length;
 
             const categoryIndex = categories.indexOf(category);
 
@@ -178,6 +182,7 @@ export class Visual implements IVisual {
                 min,
                 q1,
                 median,
+                mean,
                 q3,
                 max,
                 identity
@@ -191,7 +196,6 @@ export class Visual implements IVisual {
     }
 
     private render(viewModel: BoxplotViewModel, viewport: IViewport): void {
-        // copy so we can sort
         let data = viewModel.dataPoints.slice();
         this.mainGroup.selectAll("*").remove();
 
@@ -199,44 +203,45 @@ export class Visual implements IVisual {
             return;
         }
 
-        const allValues = data.reduce(
-            (acc, d) => acc.concat([d.min, d.max]),
-            [] as number[]
-        );
+        const allValues = data
+            .reduce(
+                (acc, d) => acc.concat([d.min, d.q1, d.median, d.q3, d.max]),
+                [] as number[]
+            )
+            .filter(v => v != null && !isNaN(v));
 
-        // Formatting cards
-        const dp = this.formattingSettings.dataPointCard;
-        const xAxisSettings = this.formattingSettings.xAxisCard;
-        const yAxisSettings = this.formattingSettings.yAxisCard;
-        const shapesSettings = this.formattingSettings.shapesCard;
-        const chartOptionsSettings = (this.formattingSettings as any).chartOptionsCard;
+        if (allValues.length === 0) {
+            return;
+        }
+
+        const dp                  = this.formattingSettings.dataPointCard;
+        const xAxisSettings       = this.formattingSettings.xAxisCard;
+        const yAxisSettings       = this.formattingSettings.yAxisCard;
+        const shapesSettings      = this.formattingSettings.shapesCard;
+        const chartOptionsSettings = this.formattingSettings.chartOptionsCard;
 
         // Colors
-        const color = dp.fill.value.value;
+        const color       = dp.fill.value.value;
         const medianColor = dp.medianColor.value.value;
+        const meanColor   = dp.meanColor.value.value;
 
-        // Orientation: "vertical" or "horizontal"
-        let orientation: string = "vertical";
-
+        // Orientation
+        let orientation = "vertical";
         if (chartOptionsSettings &&
             chartOptionsSettings.orientation &&
             chartOptionsSettings.orientation.value) {
 
-            // orientation.value is an IEnumMember: { value: string; displayName: string; }
-            const enumMember = chartOptionsSettings.orientation.value as any;
-            orientation = enumMember.value as string;
-
-        } else if ((this.settings as any).chartOptions &&
-                (this.settings as any).chartOptions.orientation !== undefined) {
-
-            // Legacy numeric: 0 = vertical, 1 = horizontal
-            const legacyOrientation = (this.settings as any).chartOptions.orientation;
-            orientation = legacyOrientation === 1 ? "horizontal" : "vertical";
+            const orientationVal = chartOptionsSettings.orientation.value;
+            if (typeof orientationVal === "object" && orientationVal !== null) {
+                orientation = (orientationVal as any).value as string;
+            } else {
+                orientation = String(orientationVal);
+            }
         }
 
         const isHorizontal = orientation === "horizontal";
 
-        // Sort by median if enabled
+        // Sort by median
         let sortByMedian = false;
         if (chartOptionsSettings &&
             chartOptionsSettings.sortByMedian &&
@@ -244,14 +249,13 @@ export class Visual implements IVisual {
             sortByMedian = chartOptionsSettings.sortByMedian.value;
         }
         if (sortByMedian) {
-            data.sort((a, b) => a.median - b.median); // ascending
+            data.sort((a, b) => a.median - b.median);
         }
 
-        // Base margins
+        // Margins
         const baseMargin = { top: 20, right: 20, bottom: 40, left: 50 };
         const margin = { ...baseMargin };
 
-        // Dynamically increase left margin for horizontal orientation
         if (isHorizontal) {
             const fontSize = yAxisSettings.fontSize.value || 11;
             const maxLabelLen = d3.max(data, d => (d.category ? d.category.length : 0)) || 0;
@@ -259,19 +263,22 @@ export class Visual implements IVisual {
             margin.left = Math.max(baseMargin.left, approxLabelWidth + 10);
         }
 
-        const width = Math.max(viewport.width - margin.left - margin.right, 10);
-        const height = Math.max(viewport.height - margin.top - margin.bottom, 10);
+        const width  = Math.max(viewport.width  - margin.left - margin.right,  10);
+        const height = Math.max(viewport.height - margin.top  - margin.bottom, 10);
 
         const g = this.mainGroup
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        // Number formatting for tooltips (1 decimal place)
         const formatVal = (v: number) => v.toFixed(1);
+
+        // Color scale for multi-color mode
+        const getColor = (_category: string) => color;
 
         if (!isHorizontal) {
             // ----------------------
             // Vertical orientation
             // ----------------------
+
             const yScale = d3.scaleLinear()
                 .domain([d3.min(allValues)!, d3.max(allValues)!])
                 .nice()
@@ -282,10 +289,13 @@ export class Visual implements IVisual {
                 .range([0, width])
                 .padding(0.4);
 
-            const xAxis = d3.axisBottom(xScale);
-            const yAxis = d3.axisLeft(yScale).ticks(5);
+            const xAxis = d3.axisBottom(xScale)
+                .tickSize(xAxisSettings.showTicks.value ? 6 : 0)
+                .tickSizeOuter(0);
+            const yAxis = d3.axisLeft(yScale).ticks(5)
+                .tickSize(yAxisSettings.showTicks.value ? 6 : 0)
+                .tickSizeOuter(0);
 
-            // Grid axes
             const yGrid = d3.axisLeft(yScale)
                 .tickSize(-width)
                 .tickFormat(() => "");
@@ -294,7 +304,6 @@ export class Visual implements IVisual {
                 .tickSize(-height)
                 .tickFormat(() => "");
 
-            // Add gridlines if enabled
             if (yAxisSettings.showGrid.value) {
                 g.append("g")
                     .attr("class", "grid grid-y")
@@ -308,22 +317,33 @@ export class Visual implements IVisual {
                     .call(xGrid);
             }
 
+            // ---- X-Achse (vertikal) ----
             if (xAxisSettings.show.value) {
-                g.append("g")
+                const xAxisGroup = g.append("g")
                     .attr("transform", `translate(0,${height})`)
-                    .call(xAxis)
-                    .selectAll("text")
-                    .style("font-size", `${xAxisSettings.fontSize.value}px`)
-                    .style("fill", xAxisSettings.fontColor.value.value)
+                    .call(xAxis);
+
+                if (!xAxisSettings.showTicks.value) {
+                    xAxisGroup.selectAll(".tick line").remove();
+                }
+
+                xAxisGroup.selectAll("text")
+                    .style("font-size",   `${xAxisSettings.fontSize.value}px`)
+                    .style("fill",        xAxisSettings.fontColor.value.value)
                     .style("font-family", xAxisSettings.fontFamily.value);
             }
 
             if (yAxisSettings.show.value) {
-                g.append("g")
-                    .call(yAxis)
-                    .selectAll("text")
-                    .style("font-size", `${yAxisSettings.fontSize.value}px`)
-                    .style("fill", yAxisSettings.fontColor.value.value)
+                const yAxisGroup = g.append("g")
+                    .call(yAxis);
+
+                if (!yAxisSettings.showTicks.value) {
+                    yAxisGroup.selectAll(".tick line").remove();
+                }
+
+                yAxisGroup.selectAll("text")
+                    .style("font-size",   `${yAxisSettings.fontSize.value}px`)
+                    .style("fill",        yAxisSettings.fontColor.value.value)
                     .style("font-family", yAxisSettings.fontFamily.value);
             }
 
@@ -332,60 +352,70 @@ export class Visual implements IVisual {
                 .enter()
                 .append("g")
                 .classed("boxplotBox", true)
-                .attr("transform", d => `translate(${xScale(d.category)! + xScale.bandwidth() / 2},0)`);
+                .attr("transform", d =>
+                    `translate(${xScale(d.category)! + xScale.bandwidth() / 2},0)`
+                );
 
             const boxWidth = Math.max(xScale.bandwidth() * 0.6, 10);
 
-            // Whisker line (min to max)
+            // Whisker line
             boxGroup.append("line")
                 .attr("class", "whisker-line")
-                .attr("x1", 0)
-                .attr("x2", 0)
+                .attr("x1", 0).attr("x2", 0)
                 .attr("y1", d => yScale(d.min))
                 .attr("y2", d => yScale(d.max))
-                .attr("stroke", color)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
-            // Box from Q1 to Q3
+            // Box Q1 to Q3
             boxGroup.append("rect")
                 .attr("class", "box-rect")
                 .attr("x", -boxWidth / 2)
                 .attr("width", boxWidth)
                 .attr("y", d => yScale(d.q3))
                 .attr("height", d => Math.max(yScale(d.q1) - yScale(d.q3), 1))
-                .attr("stroke", color)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5)
-                .attr("fill", color);
+                .attr("fill", d => getColor(d.category));
 
             // Median line
             if (shapesSettings.showMedian.value) {
                 boxGroup.append("line")
                     .attr("class", "median-line")
-                    .attr("x1", -boxWidth / 2)
-                    .attr("x2", boxWidth / 2)
+                    .attr("x1", -boxWidth / 2).attr("x2", boxWidth / 2)
                     .attr("y1", d => yScale(d.median))
                     .attr("y2", d => yScale(d.median))
                     .attr("stroke", medianColor)
                     .attr("stroke-width", 2);
             }
 
+            // Mean dot
+            if (shapesSettings.showMean.value) {
+                boxGroup.append("circle")
+                    .attr("class", "mean-dot")
+                    .attr("cx", 0)
+                    .attr("cy", d => yScale(d.mean))
+                    .attr("r", 4)
+                    .attr("fill", meanColor)
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 1);
+            }
+
             // Whisker caps
             boxGroup.append("line")
                 .attr("class", "whisker-cap-min")
-                .attr("x1", -boxWidth / 4)
-                .attr("x2", boxWidth / 4)
+                .attr("x1", -boxWidth / 4).attr("x2", boxWidth / 4)
                 .attr("y1", d => yScale(d.min))
                 .attr("y2", d => yScale(d.min))
-                .attr("stroke", color)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
             boxGroup.append("line")
                 .attr("class", "whisker-cap-max")
-                .attr("x1", -boxWidth / 4)
-                .attr("x2", boxWidth / 4)
+                .attr("x1", -boxWidth / 4).attr("x2", boxWidth / 4)
                 .attr("y1", d => yScale(d.max))
                 .attr("y2", d => yScale(d.max))
-                .attr("stroke", color)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
             // Selection
@@ -398,7 +428,6 @@ export class Visual implements IVisual {
                             !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
                         );
                     });
-
                 event.stopPropagation();
             });
 
@@ -408,19 +437,21 @@ export class Visual implements IVisual {
                 });
             });
 
-            // Tooltips with rounded values (1 decimal)
+            // Tooltips
             this.tooltipServiceWrapper.addTooltip(
                 boxGroup,
                 (tooltipEvent: BoxplotDataPoint) => [
                     { displayName: "Category", value: tooltipEvent.category },
-                    { displayName: "min",     value: formatVal(tooltipEvent.min) },
-                    { displayName: "Q1",      value: formatVal(tooltipEvent.q1) },
-                    { displayName: "median",  value: formatVal(tooltipEvent.median) },
-                    { displayName: "Q3",      value: formatVal(tooltipEvent.q3) },
-                    { displayName: "max",     value: formatVal(tooltipEvent.max) }
+                    { displayName: "Min",      value: formatVal(tooltipEvent.min) },
+                    { displayName: "Q1",       value: formatVal(tooltipEvent.q1) },
+                    { displayName: "Median",   value: formatVal(tooltipEvent.median) },
+                    { displayName: "Mean",     value: formatVal(tooltipEvent.mean) },
+                    { displayName: "Q3",       value: formatVal(tooltipEvent.q3) },
+                    { displayName: "Max",      value: formatVal(tooltipEvent.max) }
                 ],
                 (tooltipEvent: BoxplotDataPoint) => tooltipEvent.identity
             );
+
         } else {
             // ----------------------
             // Horizontal orientation
@@ -432,13 +463,16 @@ export class Visual implements IVisual {
 
             const yScale = d3.scaleBand()
                 .domain(data.map(d => d.category))
-                .range([height, 0]) // keep baseline at bottom
+                .range([height, 0])
                 .padding(0.4);
 
-            const xAxis = d3.axisBottom(xScale).ticks(5);
-            const yAxis = d3.axisLeft(yScale);
+            const xAxis = d3.axisBottom(xScale).ticks(5)
+                .tickSize(xAxisSettings.showTicks.value ? 6 : 0)
+                .tickSizeOuter(0);
+            const yAxis = d3.axisLeft(yScale)
+                .tickSize(yAxisSettings.showTicks.value ? 6 : 0)
+                .tickSizeOuter(0);
 
-            // Grid axes
             const xGrid = d3.axisBottom(xScale)
                 .tickSize(-height)
                 .tickFormat(() => "");
@@ -447,7 +481,6 @@ export class Visual implements IVisual {
                 .tickSize(-width)
                 .tickFormat(() => "");
 
-            // Add gridlines if enabled
             if (yAxisSettings.showGrid.value) {
                 g.append("g")
                     .attr("class", "grid grid-y")
@@ -462,21 +495,31 @@ export class Visual implements IVisual {
             }
 
             if (xAxisSettings.show.value) {
-                g.append("g")
+                const xAxisGroup = g.append("g")
                     .attr("transform", `translate(0,${height})`)
-                    .call(xAxis)
-                    .selectAll("text")
-                    .style("font-size", `${xAxisSettings.fontSize.value}px`)
-                    .style("fill", xAxisSettings.fontColor.value.value)
+                    .call(xAxis);
+
+                if (!xAxisSettings.showTicks.value) {
+                    xAxisGroup.selectAll(".tick line").remove();
+                }
+
+                xAxisGroup.selectAll("text")
+                    .style("font-size",   `${xAxisSettings.fontSize.value}px`)
+                    .style("fill",        xAxisSettings.fontColor.value.value)
                     .style("font-family", xAxisSettings.fontFamily.value);
             }
 
             if (yAxisSettings.show.value) {
-                g.append("g")
-                    .call(yAxis)
-                    .selectAll("text")
-                    .style("font-size", `${yAxisSettings.fontSize.value}px`)
-                    .style("fill", yAxisSettings.fontColor.value.value)
+                const yAxisGroup = g.append("g")
+                    .call(yAxis);
+
+                if (!yAxisSettings.showTicks.value) {
+                    yAxisGroup.selectAll(".tick line").remove();
+                }
+
+                yAxisGroup.selectAll("text")
+                    .style("font-size",   `${yAxisSettings.fontSize.value}px`)
+                    .style("fill",        yAxisSettings.fontColor.value.value)
                     .style("font-family", yAxisSettings.fontFamily.value);
             }
 
@@ -492,47 +535,58 @@ export class Visual implements IVisual {
 
             const boxHeight = Math.max(yScale.bandwidth() * 0.6, 10);
 
-            // Whisker line (min to max) horizontally
+            // Whisker line
             boxGroup.append("line")
                 .attr("class", "whisker-line")
                 .attr("x1", d => xScale(d.min))
                 .attr("x2", d => xScale(d.max))
-                .attr("y1", 0)
-                .attr("y2", 0)
-                .attr("stroke", color)
+                .attr("y1", 0).attr("y2", 0)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
-            // Box from Q1 to Q3 horizontally
+            // Box Q1 to Q3
             boxGroup.append("rect")
                 .attr("class", "box-rect")
                 .attr("x", d => xScale(d.q1))
                 .attr("width", d => Math.max(xScale(d.q3) - xScale(d.q1), 1))
                 .attr("y", -boxHeight / 2)
                 .attr("height", boxHeight)
-                .attr("stroke", color)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5)
-                .attr("fill", color);
+                .attr("fill", d => getColor(d.category));
 
-            // Median line (vertical)
+            // Median line
             if (shapesSettings.showMedian.value) {
                 boxGroup.append("line")
                     .attr("class", "median-line")
                     .attr("x1", d => xScale(d.median))
                     .attr("x2", d => xScale(d.median))
                     .attr("y1", -boxHeight / 2)
-                    .attr("y2", boxHeight / 2)
+                    .attr("y2",  boxHeight / 2)
                     .attr("stroke", medianColor)
                     .attr("stroke-width", 2);
             }
 
-            // Whisker caps (vertical lines at min & max)
+            // Mean dot
+            if (shapesSettings.showMean.value) {
+                boxGroup.append("circle")
+                    .attr("class", "mean-dot")
+                    .attr("cx", d => xScale(d.mean))
+                    .attr("cy", 0)
+                    .attr("r", 4)
+                    .attr("fill", meanColor)
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 1);
+            }
+
+            // Whisker caps
             boxGroup.append("line")
                 .attr("class", "whisker-cap-min")
                 .attr("x1", d => xScale(d.min))
                 .attr("x2", d => xScale(d.min))
                 .attr("y1", -boxHeight / 4)
-                .attr("y2", boxHeight / 4)
-                .attr("stroke", color)
+                .attr("y2",  boxHeight / 4)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
             boxGroup.append("line")
@@ -540,8 +594,8 @@ export class Visual implements IVisual {
                 .attr("x1", d => xScale(d.max))
                 .attr("x2", d => xScale(d.max))
                 .attr("y1", -boxHeight / 4)
-                .attr("y2", boxHeight / 4)
-                .attr("stroke", color)
+                .attr("y2",  boxHeight / 4)
+                .attr("stroke", d => getColor(d.category))
                 .attr("stroke-width", 1.5);
 
             // Selection
@@ -554,7 +608,6 @@ export class Visual implements IVisual {
                             !!selectionIds && selectionIds.indexOf(dp.identity) !== -1
                         );
                     });
-
                 event.stopPropagation();
             });
 
@@ -564,16 +617,17 @@ export class Visual implements IVisual {
                 });
             });
 
-            // Tooltips with rounded values (1 decimal)
+            // Tooltips
             this.tooltipServiceWrapper.addTooltip(
                 boxGroup,
                 (tooltipEvent: BoxplotDataPoint) => [
                     { displayName: "Category", value: tooltipEvent.category },
-                    { displayName: "min",     value: formatVal(tooltipEvent.min) },
-                    { displayName: "Q1",      value: formatVal(tooltipEvent.q1) },
-                    { displayName: "median",  value: formatVal(tooltipEvent.median) },
-                    { displayName: "Q3",      value: formatVal(tooltipEvent.q3) },
-                    { displayName: "max",     value: formatVal(tooltipEvent.max) }
+                    { displayName: "Min",      value: formatVal(tooltipEvent.min) },
+                    { displayName: "Q1",       value: formatVal(tooltipEvent.q1) },
+                    { displayName: "Median",   value: formatVal(tooltipEvent.median) },
+                    { displayName: "Mean",     value: formatVal(tooltipEvent.mean) },
+                    { displayName: "Q3",       value: formatVal(tooltipEvent.q3) },
+                    { displayName: "Max",      value: formatVal(tooltipEvent.max) }
                 ],
                 (tooltipEvent: BoxplotDataPoint) => tooltipEvent.identity
             );
@@ -583,7 +637,6 @@ export class Visual implements IVisual {
     public enumerateObjectInstances(
         options: EnumerateVisualObjectInstancesOptions
     ): VisualObjectInstanceEnumeration {
-        // Use legacy Settings for older format pane enumeration
         return Settings.enumerateObjectInstances(
             this.settings || Settings.getDefault(),
             options
@@ -591,19 +644,15 @@ export class Visual implements IVisual {
     }
 
     public getFormattingModel(): FormattingModel {
-        // Modern format pane
         return formattingSettingsService.buildFormattingModel(this.formattingSettings);
     }
 }
 
-/**
- * Simple quantile function (p between 0 and 1)
- */
 function quantile(sortedValues: number[], p: number): number {
     if (sortedValues.length === 0) {
         return NaN;
     }
-    const pos = (sortedValues.length - 1) * p;
+    const pos  = (sortedValues.length - 1) * p;
     const base = Math.floor(pos);
     const rest = pos - base;
 
