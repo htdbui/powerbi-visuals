@@ -1,0 +1,65 @@
+{
+  "culture": "en-US",
+  "name": "English",
+  "strings": {
+    "Visual_DisplayName": "Box Plot",
+    "Visual_Description": "A custom Box Plot visual for Power BI.",
+
+    "Role_Category": "Category",
+    "Role_Sampling": "Sampling",
+    "Role_Values": "Values",
+    "Role_Tooltips": "Tooltips",
+
+    "Object_General": "General",
+    "Property_Telemetry": "Enable telemetry",
+
+    "Object_ChartOptions": "Chart options",
+    "Property_Orientation": "Orientation",
+    "Property_Orientation_Vertical": "Vertical",
+    "Property_Orientation_Horizontal": "Horizontal",
+    "Property_SortByMedian": "Sort categories by median",
+
+    "Object_XAxis": "X axis",
+    "Object_YAxis": "Y axis",
+    "Property_Show": "Show",
+    "Property_ShowGrid": "Show gridlines",
+    "Property_ShowTicks": "Show ticks",
+    "Property_FontColor": "Font color",
+    "Property_FontSize": "Text size",
+    "Property_FontFamily": "Font family",
+
+    "Object_DataPoint": "Box colors",
+    "Property_Fill": "Box color",
+    "Property_MedianColor": "Median color",
+    "Property_MeanColor": "Mean color",
+
+    "Object_Shapes": "Shapes",
+    "Property_ShowMedian": "Show median",
+    "Property_ShowMean": "Show mean",
+
+    "Object_CategoryLabels": "Category label layout (horizontal)",
+    "Property_LayoutMode": "Overflow handling",
+    "Property_LayoutMode_None": "None",
+    "Property_LayoutMode_Truncate": "Truncate with ellipsis",
+    "Property_LayoutMode_Wrap": "Wrap to multiple lines",
+    "Property_MaxLines": "Max wrap lines",
+    "Property_Rotation": "Rotation",
+
+    "Landing_Title": "Box Plot",
+    "Landing_Text": "Add fields to build the box plot.",
+    "Landing_Category_Label": "Category: ",
+    "Landing_Category_Value": "group name",
+    "Landing_Sampling_Label": "Sampling: ",
+    "Landing_Sampling_Value": "one record or sample inside each category",
+    "Landing_Values_Label": "Values: ",
+    "Landing_Values_Value": "numeric measure used to compute the distribution",
+
+    "Tooltip_Category": "Category",
+    "Tooltip_Min": "Min",
+    "Tooltip_Q1": "Q1",
+    "Tooltip_Median": "Median",
+    "Tooltip_Mean": "Mean",
+    "Tooltip_Q3": "Q3",
+    "Tooltip_Max": "Max"
+  }
+}

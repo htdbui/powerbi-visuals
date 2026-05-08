@@ -32,6 +32,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import FormattingModel = powerbi.visuals.FormattingModel;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 interface BoxplotDataPoint {
     category: string;
@@ -51,6 +52,7 @@ interface BoxplotViewModel {
 
 export class Visual implements IVisual {
     private host: IVisualHost;
+    private localizationManager: ILocalizationManager;
     private element: HTMLElement;
     private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
@@ -72,6 +74,7 @@ export class Visual implements IVisual {
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
+        this.localizationManager = this.host.createLocalizationManager();
         this.element = options.element;
         this.events = options.host.eventService;
 
@@ -155,6 +158,16 @@ export class Visual implements IVisual {
         }
     }
 
+    private t(key: string, fallback: string): string {
+        const localized = this.localizationManager.getDisplayName(key);
+
+        if (!localized || localized === key) {
+            return fallback;
+        }
+
+        return localized;
+    }
+
     private updateColorMode(): void {
         const colorPalette = this.host.colorPalette;
         this.isHighContrast = colorPalette.isHighContrast;
@@ -207,28 +220,37 @@ export class Visual implements IVisual {
         this.landingPage
             .append("div")
             .classed("boxplotLandingTitle", true)
-            .text("Box Plot");
+            .text(this.t("Landing_Title", "Box Plot"));
 
         this.landingPage
             .append("div")
             .classed("boxplotLandingText", true)
-            .text("Add fields to build the box plot.");
+            .text(this.t("Landing_Text", "Add fields to build the box plot."));
 
         const hint = this.landingPage
             .append("div")
             .classed("boxplotLandingHint", true);
 
         const line1 = hint.append("div");
-        line1.append("span").classed("boxplotLandingLabel", true).text("Category: ");
-        line1.append("span").text("group name");
+        line1.append("span")
+            .classed("boxplotLandingLabel", true)
+            .text(this.t("Landing_Category_Label", "Category: "));
+        line1.append("span")
+            .text(this.t("Landing_Category_Value", "group name"));
 
         const line2 = hint.append("div");
-        line2.append("span").classed("boxplotLandingLabel", true).text("Sampling: ");
-        line2.append("span").text("one record or sample inside each category");
+        line2.append("span")
+            .classed("boxplotLandingLabel", true)
+            .text(this.t("Landing_Sampling_Label", "Sampling: "));
+        line2.append("span")
+            .text(this.t("Landing_Sampling_Value", "one record or sample inside each category"));
 
         const line3 = hint.append("div");
-        line3.append("span").classed("boxplotLandingLabel", true).text("Values: ");
-        line3.append("span").text("numeric measure used to compute the distribution");
+        line3.append("span")
+            .classed("boxplotLandingLabel", true)
+            .text(this.t("Landing_Values_Label", "Values: "));
+        line3.append("span")
+            .text(this.t("Landing_Values_Value", "numeric measure used to compute the distribution"));
 
         this.isLandingPageVisible = true;
     }
@@ -486,13 +508,34 @@ export class Visual implements IVisual {
             this.tooltipServiceWrapper.addTooltip(
                 boxGroup,
                 (tooltipEvent: BoxplotDataPoint) => [
-                    { displayName: "Category", value: tooltipEvent.category },
-                    { displayName: "Min", value: formatVal(tooltipEvent.min) },
-                    { displayName: "Q1", value: formatVal(tooltipEvent.q1) },
-                    { displayName: "Median", value: formatVal(tooltipEvent.median) },
-                    { displayName: "Mean", value: formatVal(tooltipEvent.mean) },
-                    { displayName: "Q3", value: formatVal(tooltipEvent.q3) },
-                    { displayName: "Max", value: formatVal(tooltipEvent.max) }
+                    {
+                        displayName: this.t("Tooltip_Category", "Category"),
+                        value: tooltipEvent.category
+                    },
+                    {
+                        displayName: this.t("Tooltip_Min", "Min"),
+                        value: formatVal(tooltipEvent.min)
+                    },
+                    {
+                        displayName: this.t("Tooltip_Q1", "Q1"),
+                        value: formatVal(tooltipEvent.q1)
+                    },
+                    {
+                        displayName: this.t("Tooltip_Median", "Median"),
+                        value: formatVal(tooltipEvent.median)
+                    },
+                    {
+                        displayName: this.t("Tooltip_Mean", "Mean"),
+                        value: formatVal(tooltipEvent.mean)
+                    },
+                    {
+                        displayName: this.t("Tooltip_Q3", "Q3"),
+                        value: formatVal(tooltipEvent.q3)
+                    },
+                    {
+                        displayName: this.t("Tooltip_Max", "Max"),
+                        value: formatVal(tooltipEvent.max)
+                    }
                 ],
                 (tooltipEvent: BoxplotDataPoint) => tooltipEvent.identity
             );

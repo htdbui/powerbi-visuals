@@ -3,22 +3,26 @@
     {
       "name": "Category",
       "kind": "Grouping",
-      "displayName": "Category"
+      "displayName": "Category",
+      "displayNameKey": "Role_Category"
     },
     {
       "name": "Sampling",
       "kind": "Grouping",
-      "displayName": "Sampling"
+      "displayName": "Sampling",
+      "displayNameKey": "Role_Sampling"
     },
     {
       "name": "Values",
       "kind": "Measure",
-      "displayName": "Values"
+      "displayName": "Values",
+      "displayNameKey": "Role_Values"
     },
     {
       "name": "Tooltips",
       "kind": "Measure",
-      "displayName": "Tooltips"
+      "displayName": "Tooltips",
+      "displayNameKey": "Role_Tooltips"
     }
   ],
   "dataViewMappings": [
@@ -46,10 +50,10 @@
   ],
   "objects": {
     "general": {
-      "displayName": "General",
+      "displayNameKey": "Object_General",
       "properties": {
         "telemetry": {
-          "displayName": "Enable telemetry",
+          "displayNameKey": "Property_Telemetry",
           "type": {
             "bool": true
           }
@@ -57,25 +61,25 @@
       }
     },
     "chartOptions": {
-      "displayName": "Chart options",
+      "displayNameKey": "Object_ChartOptions",
       "properties": {
         "orientation": {
-          "displayName": "Orientation",
+          "displayNameKey": "Property_Orientation",
           "type": {
             "enumeration": [
               {
                 "value": "vertical",
-                "displayName": "Vertical"
+                "displayNameKey": "Property_Orientation_Vertical"
               },
               {
                 "value": "horizontal",
-                "displayName": "Horizontal"
+                "displayNameKey": "Property_Orientation_Horizontal"
               }
             ]
           }
         },
         "sortByMedian": {
-          "displayName": "Sort categories by median",
+          "displayNameKey": "Property_SortByMedian",
           "type": {
             "bool": true
           }
@@ -83,28 +87,28 @@
       }
     },
     "xAxis": {
-      "displayName": "X axis",
+      "displayNameKey": "Object_XAxis",
       "properties": {
         "show": {
-          "displayName": "Show",
+          "displayNameKey": "Property_Show",
           "type": {
             "bool": true
           }
         },
         "showGrid": {
-          "displayName": "Show gridlines",
+          "displayNameKey": "Property_ShowGrid",
           "type": {
             "bool": true
           }
         },
         "showTicks": {
-          "displayName": "Show ticks",
+          "displayNameKey": "Property_ShowTicks",
           "type": {
             "bool": true
           }
         },
         "fontColor": {
-          "displayName": "Font color",
+          "displayNameKey": "Property_FontColor",
           "type": {
             "fill": {
               "solid": {
@@ -114,13 +118,13 @@
           }
         },
         "fontSize": {
-          "displayName": "Text size",
+          "displayNameKey": "Property_FontSize",
           "type": {
             "numeric": true
           }
         },
         "fontFamily": {
-          "displayName": "Font family",
+          "displayNameKey": "Property_FontFamily",
           "type": {
             "text": true
           }
@@ -128,28 +132,28 @@
       }
     },
     "yAxis": {
-      "displayName": "Y axis",
+      "displayNameKey": "Object_YAxis",
       "properties": {
         "show": {
-          "displayName": "Show",
+          "displayNameKey": "Property_Show",
           "type": {
             "bool": true
           }
         },
         "showGrid": {
-          "displayName": "Show gridlines",
+          "displayNameKey": "Property_ShowGrid",
           "type": {
             "bool": true
           }
         },
         "showTicks": {
-          "displayName": "Show ticks",
+          "displayNameKey": "Property_ShowTicks",
           "type": {
             "bool": true
           }
         },
         "fontColor": {
-          "displayName": "Font color",
+          "displayNameKey": "Property_FontColor",
           "type": {
             "fill": {
               "solid": {
@@ -159,13 +163,13 @@
           }
         },
         "fontSize": {
-          "displayName": "Text size",
+          "displayNameKey": "Property_FontSize",
           "type": {
             "numeric": true
           }
         },
         "fontFamily": {
-          "displayName": "Font family",
+          "displayNameKey": "Property_FontFamily",
           "type": {
             "text": true
           }
@@ -173,10 +177,10 @@
       }
     },
     "dataPoint": {
-      "displayName": "Box colors",
+      "displayNameKey": "Object_DataPoint",
       "properties": {
         "fill": {
-          "displayName": "Box color",
+          "displayNameKey": "Property_Fill",
           "type": {
             "fill": {
               "solid": {
@@ -186,7 +190,7 @@
           }
         },
         "medianColor": {
-          "displayName": "Median color",
+          "displayNameKey": "Property_MedianColor",
           "type": {
             "fill": {
               "solid": {
@@ -196,7 +200,7 @@
           }
         },
         "meanColor": {
-          "displayName": "Mean color",
+          "displayNameKey": "Property_MeanColor",
           "type": {
             "fill": {
               "solid": {
@@ -208,16 +212,16 @@
       }
     },
     "shapes": {
-      "displayName": "Shapes",
+      "displayNameKey": "Object_Shapes",
       "properties": {
         "showMedian": {
-          "displayName": "Show median",
+          "displayNameKey": "Property_ShowMedian",
           "type": {
             "bool": true
           }
         },
         "showMean": {
-          "displayName": "Show mean",
+          "displayNameKey": "Property_ShowMean",
           "type": {
             "bool": true
           }
@@ -225,35 +229,35 @@
       }
     },
     "categoryLabels": {
-      "displayName": "Category label layout (horizontal)",
+      "displayNameKey": "Object_CategoryLabels",
       "properties": {
         "layoutMode": {
-          "displayName": "Overflow handling",
+          "displayNameKey": "Property_LayoutMode",
           "type": {
             "enumeration": [
               {
                 "value": "none",
-                "displayName": "None"
+                "displayNameKey": "Property_LayoutMode_None"
               },
               {
                 "value": "truncate",
-                "displayName": "Truncate with ellipsis"
+                "displayNameKey": "Property_LayoutMode_Truncate"
               },
               {
                 "value": "wrap",
-                "displayName": "Wrap to multiple lines"
+                "displayNameKey": "Property_LayoutMode_Wrap"
               }
             ]
           }
         },
         "maxLines": {
-          "displayName": "Max wrap lines",
+          "displayNameKey": "Property_MaxLines",
           "type": {
             "numeric": true
           }
         },
         "rotation": {
-          "displayName": "Rotation",
+          "displayNameKey": "Property_Rotation",
           "type": {
             "numeric": true
           }

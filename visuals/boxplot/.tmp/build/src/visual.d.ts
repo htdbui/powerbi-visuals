@@ -9,6 +9,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import FormattingModel = powerbi.visuals.FormattingModel;
 export declare class Visual implements IVisual {
     private host;
+    private localizationManager;
     private element;
     private svg;
     private mainGroup;
@@ -26,6 +27,7 @@ export declare class Visual implements IVisual {
     private isLandingPageVisible;
     constructor(options: VisualConstructorOptions);
     update(options: VisualUpdateOptions): void;
+    private t;
     private updateColorMode;
     private handleContextMenu;
     private renderLandingPage;
