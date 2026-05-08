@@ -13,7 +13,7 @@ export class ChartOptionsCardSettings extends formattingSettings.SimpleCard {
         name: "orientation",
         displayName: "Orientation",
         items: [
-            { value: "vertical",   displayName: "Vertical" },
+            { value: "vertical", displayName: "Vertical" },
             { value: "horizontal", displayName: "Horizontal" }
         ],
         value: { value: "vertical", displayName: "Vertical" }
@@ -94,11 +94,10 @@ export class XAxisCardSettings extends formattingSettings.SimpleCard {
         value: 11
     });
 
-    public fontFamily = new formattingSettings.TextInput({
+    public fontFamily = new formattingSettings.FontPicker({
         name: "fontFamily",
         displayName: "Font family",
-        value: "Segoe UI",
-        placeholder: "Segoe UI"
+        value: "Segoe UI"
     });
 
     public slices: formattingSettings.Slice[] = [
@@ -131,7 +130,7 @@ export class YAxisCardSettings extends formattingSettings.SimpleCard {
         name: "showTicks",
         displayName: "Show ticks",
         value: true
-    }); 
+    });
 
     public fontColor = new formattingSettings.ColorPicker({
         name: "fontColor",
@@ -145,11 +144,10 @@ export class YAxisCardSettings extends formattingSettings.SimpleCard {
         value: 11
     });
 
-    public fontFamily = new formattingSettings.TextInput({
+    public fontFamily = new formattingSettings.FontPicker({
         name: "fontFamily",
         displayName: "Font family",
-        value: "Segoe UI",
-        placeholder: "Segoe UI"
+        value: "Segoe UI"
     });
 
     public slices: formattingSettings.Slice[] = [
@@ -184,19 +182,55 @@ export class ShapesCardSettings extends formattingSettings.SimpleCard {
     ];
 }
 
+export class CategoryLabelsCardSettings extends formattingSettings.SimpleCard {
+    public name: string = "categoryLabels";
+    public displayName: string = "Category label layout (horizontal)";
+
+    public layoutMode = new formattingSettings.ItemDropdown({
+        name: "layoutMode",
+        displayName: "Overflow handling",
+        items: [
+            { value: "none", displayName: "None" },
+            { value: "truncate", displayName: "Truncate with ellipsis" },
+            { value: "wrap", displayName: "Wrap to multiple lines" }
+        ],
+        value: { value: "none", displayName: "None" }
+    });
+
+    public maxLines = new formattingSettings.NumUpDown({
+        name: "maxLines",
+        displayName: "Max wrap lines",
+        value: 2
+    });
+
+    public rotation = new formattingSettings.NumUpDown({
+        name: "rotation",
+        displayName: "Rotation",
+        value: 0
+    });
+
+    public slices: formattingSettings.Slice[] = [
+        this.layoutMode,
+        this.maxLines,
+        this.rotation
+    ];
+}
+
 export class VisualFormattingSettingsModel extends formattingSettings.Model {
     public chartOptionsCard = new ChartOptionsCardSettings();
-    public dataPointCard    = new DataPointCardSettings();
-    public xAxisCard        = new XAxisCardSettings();
-    public yAxisCard        = new YAxisCardSettings();
-    public shapesCard       = new ShapesCardSettings();
+    public dataPointCard = new DataPointCardSettings();
+    public xAxisCard = new XAxisCardSettings();
+    public yAxisCard = new YAxisCardSettings();
+    public shapesCard = new ShapesCardSettings();
+    public categoryLabelsCard = new CategoryLabelsCardSettings();
 
     public cards: formattingSettings.SimpleCard[] = [
         this.chartOptionsCard,
         this.dataPointCard,
         this.xAxisCard,
         this.yAxisCard,
-        this.shapesCard
+        this.shapesCard,
+        this.categoryLabelsCard
     ];
 }
 

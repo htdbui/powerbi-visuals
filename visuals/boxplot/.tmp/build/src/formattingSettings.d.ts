@@ -22,7 +22,7 @@ export declare class XAxisCardSettings extends formattingSettings.SimpleCard {
     showTicks: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
-    fontFamily: formattingSettings.TextInput;
+    fontFamily: formattingSettings.FontPicker;
     slices: formattingSettings.Slice[];
 }
 export declare class YAxisCardSettings extends formattingSettings.SimpleCard {
@@ -33,7 +33,7 @@ export declare class YAxisCardSettings extends formattingSettings.SimpleCard {
     showTicks: formattingSettings.ToggleSwitch;
     fontColor: formattingSettings.ColorPicker;
     fontSize: formattingSettings.NumUpDown;
-    fontFamily: formattingSettings.TextInput;
+    fontFamily: formattingSettings.FontPicker;
     slices: formattingSettings.Slice[];
 }
 export declare class ShapesCardSettings extends formattingSettings.SimpleCard {
@@ -43,12 +43,21 @@ export declare class ShapesCardSettings extends formattingSettings.SimpleCard {
     showMean: formattingSettings.ToggleSwitch;
     slices: formattingSettings.Slice[];
 }
+export declare class CategoryLabelsCardSettings extends formattingSettings.SimpleCard {
+    name: string;
+    displayName: string;
+    layoutMode: formattingSettings.ItemDropdown;
+    maxLines: formattingSettings.NumUpDown;
+    rotation: formattingSettings.NumUpDown;
+    slices: formattingSettings.Slice[];
+}
 export declare class VisualFormattingSettingsModel extends formattingSettings.Model {
     chartOptionsCard: ChartOptionsCardSettings;
     dataPointCard: DataPointCardSettings;
     xAxisCard: XAxisCardSettings;
     yAxisCard: YAxisCardSettings;
     shapesCard: ShapesCardSettings;
+    categoryLabelsCard: CategoryLabelsCardSettings;
     cards: formattingSettings.SimpleCard[];
 }
 export declare const formattingSettingsService: FormattingSettingsService;

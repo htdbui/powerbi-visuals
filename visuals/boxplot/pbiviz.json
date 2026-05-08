@@ -1,17 +1,17 @@
 {
   "visual": {
     "name": "boxplot",
-    "displayName": "boxplot",
+    "displayName": "Box Plot",
     "guid": "boxplot",
     "visualClassName": "Visual",
-    "version": "1.0.0.6",
-    "description": "Custom boxplot visual built by db",
+    "version": "1.0.0.0",
+    "description": "A custom Box Plot visual for Power BI with vertical and horizontal layouts, category label formatting, sorting, and configurable axis styling.",
     "supportUrl": "https://github.com/htdbui/powerbi-visuals/issues",
     "gitHubUrl": "https://github.com/htdbui/powerbi-visuals"
   },
   "apiVersion": "5.3.0",
   "author": {
-    "name": "db",
+    "name": "Bui Duy",
     "email": "tuanduy.alias@gmail.com"
   },
   "assets": {
@@ -19,7 +19,6 @@
   },
   "style": "style/visual.less",
   "capabilities": "capabilities.json",
-  "externalJS": null,
   "dependencies": null,
   "stringResources": []
 }

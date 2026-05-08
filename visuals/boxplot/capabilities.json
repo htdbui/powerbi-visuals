@@ -223,8 +223,57 @@
           }
         }
       }
+    },
+    "categoryLabels": {
+      "displayName": "Category label layout (horizontal)",
+      "properties": {
+        "layoutMode": {
+          "displayName": "Overflow handling",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None"
+              },
+              {
+                "value": "truncate",
+                "displayName": "Truncate with ellipsis"
+              },
+              {
+                "value": "wrap",
+                "displayName": "Wrap to multiple lines"
+              }
+            ]
+          }
+        },
+        "maxLines": {
+          "displayName": "Max wrap lines",
+          "type": {
+            "numeric": true
+          }
+        },
+        "rotation": {
+          "displayName": "Rotation",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
     }
   },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "roles": [
+      "Tooltips"
+    ],
+    "supportEnhancedTooltips": true
+  },
   "supportsKeyboardFocus": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "supportsMultiVisualSelection": true,
   "privileges": []
 }

@@ -7,7 +7,7 @@ var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
 var boxplot: IVisualPlugin = {
     name: 'boxplot',
-    displayName: 'boxplot',
+    displayName: 'Box Plot',
     class: 'Visual',
     apiVersion: '5.3.0',
     create: (options?: VisualConstructorOptions) => {

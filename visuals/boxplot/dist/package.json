@@ -1,6 +1,6 @@
 {
-		"version": "1.0.0.6",
-		"author": {"name":"db","email":"tuanduy.alias@gmail.com"},
+		"version": "1.0.0.0",
+		"author": {"name":"Bui Duy","email":"tuanduy.alias@gmail.com"},
 		"resources": [
 			{
 				"resourceId": "rId0",
@@ -8,7 +8,7 @@
 				"file": "resources/boxplot.pbiviz.json"
 			}
 		],
-		"visual": {"name":"boxplot","displayName":"boxplot","guid":"boxplot","visualClassName":"Visual","version":"1.0.0.6","description":"Custom boxplot visual built by db","supportUrl":"https://github.com/htdbui/powerbi-visuals/issues","gitHubUrl":"https://github.com/htdbui/powerbi-visuals"},
+		"visual": {"name":"boxplot","displayName":"Box Plot","guid":"boxplot","visualClassName":"Visual","version":"1.0.0.0","description":"A custom Box Plot visual for Power BI with vertical and horizontal layouts, category label formatting, sorting, and configurable axis styling.","supportUrl":"https://github.com/htdbui/powerbi-visuals/issues","gitHubUrl":"https://github.com/htdbui/powerbi-visuals"},
 		"metadata": {
 			"pbivizjson": {
 				"resourceId": "rId0"
